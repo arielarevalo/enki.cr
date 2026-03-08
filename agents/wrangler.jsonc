@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "enki-agents",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "OUTLINE_DEEP", "class_name": "OutlineDeepAgent" },
+      { "name": "OUTLINE_REACT", "class_name": "OutlineReactAgent" },
+      { "name": "OUTLINE_WF", "class_name": "OutlineWorkflowAgent" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "OutlineDeepAgent",
+        "OutlineReactAgent",
+        "OutlineWorkflowAgent"
+      ]
+    }
+  ]
+}
