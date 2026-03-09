@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "agents/**"
+      - ".github/workflows/ci-agents.yml"
 
 jobs:
   check:

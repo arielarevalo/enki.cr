@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "backend/**"
+      - ".github/workflows/ci-backend.yml"
 
 jobs:
   check:

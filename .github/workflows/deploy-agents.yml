@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "agents/**"
+      - ".github/workflows/deploy-agents.yml"
   workflow_dispatch:
 
 concurrency:
