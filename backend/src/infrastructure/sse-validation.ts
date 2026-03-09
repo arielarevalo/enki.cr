@@ -1,3 +1,14 @@
+const KNOWN_EVENT_TYPES = new Set([
+  "response.created",
+  "response.output_item.added",
+  "response.content_part.added",
+  "response.output_text.delta",
+  "response.output_text.done",
+  "response.content_part.done",
+  "response.output_item.done",
+  "response.completed",
+]);
+
 export function createSseValidationStream(): TransformStream<
   Uint8Array,
   Uint8Array
@@ -12,31 +23,53 @@ export function createSseValidationStream(): TransformStream<
 
       let idx: number;
       while ((idx = buffer.indexOf("\n\n")) !== -1) {
-        const event = buffer.slice(0, idx);
+        const block = buffer.slice(0, idx);
         buffer = buffer.slice(idx + 2);
 
-        if (!event.trim()) continue;
+        if (!block.trim()) continue;
 
-        const lines = event.split("\n");
+        const lines = block.split("\n");
+        let eventType: string | undefined;
+        let dataLine: string | undefined;
+
         for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-
-          const data = line.slice(6);
-          if (data === "[DONE]") continue;
-
-          try {
-            const parsed: unknown = JSON.parse(data);
-            if (!isValidChunk(parsed)) {
-              emitError(controller, encoder);
-              return;
-            }
-          } catch {
-            emitError(controller, encoder);
-            return;
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7);
+          } else if (line.startsWith("data: ")) {
+            dataLine = line.slice(6);
           }
         }
 
-        controller.enqueue(encoder.encode(event + "\n\n"));
+        if (!eventType) {
+          emitError(controller, encoder);
+          return;
+        }
+
+        if (dataLine === undefined) {
+          emitError(controller, encoder);
+          return;
+        }
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(dataLine);
+        } catch {
+          emitError(controller, encoder);
+          return;
+        }
+
+        if (typeof parsed !== "object" || parsed === null) {
+          emitError(controller, encoder);
+          return;
+        }
+
+        const data = parsed as Record<string, unknown>;
+        if (typeof data.type !== "string" || !KNOWN_EVENT_TYPES.has(data.type)) {
+          emitError(controller, encoder);
+          return;
+        }
+
+        controller.enqueue(encoder.encode(block + "\n\n"));
       }
     },
     flush(controller) {
@@ -51,23 +84,12 @@ function emitError(
   controller: TransformStreamDefaultController<Uint8Array>,
   encoder: TextEncoder,
 ): void {
-  const errorEvent = `data: ${JSON.stringify({
+  const errorEvent = `event: error\ndata: ${JSON.stringify({
     error: {
       type: "agent_error",
       message: "Agent response failed format validation",
     },
-  })}\n\ndata: [DONE]\n\n`;
+  })}\n\n`;
   controller.enqueue(encoder.encode(errorEvent));
   controller.terminate();
-}
-
-function isValidChunk(data: unknown): boolean {
-  if (typeof data !== "object" || data === null) return false;
-  const chunk = data as Record<string, unknown>;
-  return (
-    typeof chunk.id === "string" &&
-    chunk.object === "chat.completion.chunk" &&
-    typeof chunk.created === "number" &&
-    Array.isArray(chunk.choices)
-  );
 }

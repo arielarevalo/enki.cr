@@ -12,7 +12,7 @@ type Action =
   | { type: "PROCESSING_DONE" }
   | { type: "RESET" };
 
-function reducer(_state: ModalState, action: Action): ModalState {
+export function reducer(_state: ModalState, action: Action): ModalState {
   switch (action.type) {
     case "API_KEY_VALID":
       return "sources";

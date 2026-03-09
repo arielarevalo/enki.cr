@@ -47,7 +47,9 @@ export class CloudflareAgentProvider implements AgentProvider {
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sources: request.sources }),
+      body: JSON.stringify({
+        input: request.sources.map((s) => ({ type: "input_text", text: s })),
+      }),
     });
 
     if (!response.ok) {

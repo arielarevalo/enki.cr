@@ -2,9 +2,19 @@
 
 ## Architecture
 
-- **Frontend**: Static HTML on Cloudflare Pages
-- **Backend**: Cloudflare Worker (`enki-api`)
-- **Agents**: Single Cloudflare Worker (`enki-agents`) with three Agent classes (Cloudflare Agents SDK)
+```mermaid
+graph LR
+    Browser -->|enki.cr| Pages["Cloudflare Pages<br/>(React + Vite)"]
+    Pages -->|api.enki.cr| Backend["Backend Worker<br/>(enki-api)"]
+    Backend -->|agents.enki.cr| Agents["Agents Worker<br/>(enki-agents)"]
+    Backend --- D1[(D1 Database)]
+    Agents --- DO["Durable Objects<br/>(Agent State)"]
+```
+
+- **Frontend**: React + Vite on Cloudflare Pages (`enki.cr`)
+- **Backend**: Cloudflare Worker (`enki-api`) at `api.enki.cr` — API gateway with auth, key management, and outline processing
+- **Agents**: Cloudflare Worker (`enki-agents`) at `agents.enki.cr` — three Agent classes on the Cloudflare Agents SDK (Durable Objects)
+- **Database**: Cloudflare D1 (`enki-db`) — API keys and settings
 
 Architectural decisions are recorded in [`doc/adr/`](doc/adr/). See [ADR-0001](doc/adr/0001-record-architecture-decisions.md) for the format.
 
@@ -24,10 +34,11 @@ All Cloudflare resources are managed with Terraform in the [`infra/`](infra/) di
 
 | Concern | Managed by |
 |---------|-----------|
-| Pages project, Worker scripts, DNS records | Terraform |
+| Pages project, Worker scripts, custom domains, D1 database | Terraform |
+| DNS records | Auto-managed by Pages/Workers custom domains |
 | Code deployment, content uploads | Wrangler |
 | Agent bindings, migrations | Wrangler (`agents/wrangler.jsonc`) |
-| Local development | Wrangler (`wrangler dev`) |
+| Local development | Wrangler (`wrangler dev`) / Vite (`vite`) |
 
 These tools never manage the same resource attributes. Worker scripts use `lifecycle { ignore_changes = [content] }` in Terraform so Wrangler owns the deployed code.
 
@@ -43,15 +54,28 @@ Add a `.tf` file (or edit an existing one) in `infra/`, then follow the change f
 ### Local Development
 
 ```bash
-# Frontend
-cd frontend && npx wrangler pages dev .
+# Frontend (Vite dev server with API proxy)
+cd frontend && npm run dev
 
 # Backend
-cd backend && npx wrangler dev
+cd backend && npm run dev
 
 # Agents
-cd agents && npx wrangler dev
+cd agents && npm run dev
 ```
+
+## CI/CD
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `ci-frontend.yml` | PR (frontend changes) | Lint, type-check, test |
+| `ci-backend.yml` | PR (backend changes) | Type-check, unit/integration tests |
+| `ci-agents.yml` | PR (agents changes) | Type-check |
+| `deploy-frontend.yml` | Push to main (frontend changes) | Deploy to Cloudflare Pages |
+| `deploy-backend.yml` | Push to main (backend changes) | Deploy, then E2E tests |
+| `deploy-agents.yml` | Push to main (agents changes) | Deploy to Cloudflare Workers |
+| `terraform-plan.yml` | PR (infra changes) | Plan and comment on PR |
+| `terraform-apply.yml` | Push to main (infra changes) | Apply Terraform changes |
 
 ## Bootstrap (One-Time Setup)
 

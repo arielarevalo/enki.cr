@@ -63,17 +63,18 @@ export function createMockLogger(): Logger {
 }
 
 export function createValidSseStream(): ReadableStream {
-  const chunk = {
-    id: "chatcmpl-1",
-    object: "chat.completion.chunk",
-    created: 1700000000,
-    choices: [{ index: 0, delta: { content: "Hello" } }],
-  };
   const encoder = new TextEncoder();
   return new ReadableStream({
     start(controller) {
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
-      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.enqueue(encoder.encode(
+        `event: response.created\ndata: ${JSON.stringify({ type: "response.created", response: { id: "resp_1", object: "response", created_at: 1700000000, status: "in_progress", output: [] } })}\n\n`
+      ));
+      controller.enqueue(encoder.encode(
+        `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", item_id: "msg_1", output_index: 0, content_index: 0, delta: "Hello" })}\n\n`
+      ));
+      controller.enqueue(encoder.encode(
+        `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", response: { id: "resp_1", object: "response", created_at: 1700000000, status: "completed", output: [] } })}\n\n`
+      ));
       controller.close();
     },
   });

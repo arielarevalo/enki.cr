@@ -1,14 +1,8 @@
 import { useState, type FormEvent } from "react";
+import { isValidSource } from "../utils/validation";
 
 interface Props {
   onProcess: (sources: string[]) => void;
-}
-
-function isValidSource(value: string): boolean {
-  const trimmed = value.trim();
-  if (!trimmed) return false;
-  // Match domain.tld with optional path/query
-  return /^[^\s/]+\.[^\s/]+/.test(trimmed);
 }
 
 export function SourcesForm({ onProcess }: Props) {

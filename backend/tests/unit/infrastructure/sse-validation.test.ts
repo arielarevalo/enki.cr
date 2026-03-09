@@ -39,107 +39,64 @@ async function pipeChunks(
   return output;
 }
 
-function validChunkJson(): string {
-  return JSON.stringify({
-    id: "chatcmpl-1",
-    object: "chat.completion.chunk",
-    created: 1700000000,
-    choices: [{ delta: { content: "hello" } }],
-  });
+function validEvent(
+  eventType: string = "response.output_text.delta",
+  data: Record<string, unknown> = { type: "response.output_text.delta", delta: "hello" },
+): string {
+  return `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
 describe("createSseValidationStream", () => {
-  it("passes valid SSE chunks through", async () => {
+  it("passes valid named SSE event through", async () => {
     const stream = createSseValidationStream();
-    const input = `data: ${validChunkJson()}\n\n`;
+    const input = validEvent();
 
     const output = await pipeChunks(stream, [input]);
 
     expect(output).toBe(input);
   });
 
-  it("emits an error event and terminates on invalid JSON", async () => {
+  it("emits error when event: line is missing", async () => {
     const stream = createSseValidationStream();
-    const input = `data: {not valid json\n\n`;
+    const input = `data: ${JSON.stringify({ type: "response.created" })}\n\n`;
 
     const output = await pipeChunks(stream, [input]);
 
     expect(output).toContain("agent_error");
     expect(output).toContain("Agent response failed format validation");
-    expect(output).toContain("data: [DONE]");
   });
 
-  it("emits an error event when required field 'id' is missing", async () => {
+  it("emits error on invalid JSON in data line", async () => {
     const stream = createSseValidationStream();
-    const invalid = JSON.stringify({
-      object: "chat.completion.chunk",
-      created: 1700000000,
-      choices: [],
-    });
-    const input = `data: ${invalid}\n\n`;
+    const input = `event: response.created\ndata: {not valid json\n\n`;
 
     const output = await pipeChunks(stream, [input]);
 
     expect(output).toContain("agent_error");
-    expect(output).toContain("data: [DONE]");
+    expect(output).toContain("Agent response failed format validation");
   });
 
-  it("emits an error event when required field 'object' is wrong", async () => {
+  it("emits error when type field is missing in data", async () => {
     const stream = createSseValidationStream();
-    const invalid = JSON.stringify({
-      id: "chatcmpl-1",
-      object: "wrong_type",
-      created: 1700000000,
-      choices: [],
-    });
-    const input = `data: ${invalid}\n\n`;
+    const input = `event: response.created\ndata: ${JSON.stringify({ response: { id: "resp_1" } })}\n\n`;
 
     const output = await pipeChunks(stream, [input]);
 
     expect(output).toContain("agent_error");
   });
 
-  it("emits an error event when required field 'created' is missing", async () => {
+  it("emits error on unknown event type", async () => {
     const stream = createSseValidationStream();
-    const invalid = JSON.stringify({
-      id: "chatcmpl-1",
-      object: "chat.completion.chunk",
-      choices: [],
-    });
-    const input = `data: ${invalid}\n\n`;
+    const input = `event: response.unknown\ndata: ${JSON.stringify({ type: "response.unknown" })}\n\n`;
 
     const output = await pipeChunks(stream, [input]);
 
     expect(output).toContain("agent_error");
-  });
-
-  it("emits an error event when required field 'choices' is missing", async () => {
-    const stream = createSseValidationStream();
-    const invalid = JSON.stringify({
-      id: "chatcmpl-1",
-      object: "chat.completion.chunk",
-      created: 1700000000,
-    });
-    const input = `data: ${invalid}\n\n`;
-
-    const output = await pipeChunks(stream, [input]);
-
-    expect(output).toContain("agent_error");
-  });
-
-  it("passes data: [DONE] through without validation", async () => {
-    const stream = createSseValidationStream();
-    const input = `data: ${validChunkJson()}\n\ndata: [DONE]\n\n`;
-
-    const output = await pipeChunks(stream, [input]);
-
-    expect(output).toContain(validChunkJson());
-    expect(output).toContain("data: [DONE]");
   });
 
   it("handles cross-chunk buffering when a message is split across chunks", async () => {
     const stream = createSseValidationStream();
-    const fullMessage = `data: ${validChunkJson()}\n\n`;
+    const fullMessage = validEvent();
     const splitAt = Math.floor(fullMessage.length / 2);
     const chunk1 = fullMessage.slice(0, splitAt);
     const chunk2 = fullMessage.slice(splitAt);
@@ -147,5 +104,24 @@ describe("createSseValidationStream", () => {
     const output = await pipeChunks(stream, [chunk1, chunk2]);
 
     expect(output).toBe(fullMessage);
+  });
+
+  it("passes full event sequence through", async () => {
+    const stream = createSseValidationStream();
+    const events = [
+      validEvent("response.created", { type: "response.created", response: { id: "resp_1", object: "response", created_at: 1700000000, status: "in_progress", output: [] } }),
+      validEvent("response.output_item.added", { type: "response.output_item.added", item: { id: "msg_1", type: "message" } }),
+      validEvent("response.content_part.added", { type: "response.content_part.added", part: { type: "output_text", text: "" } }),
+      validEvent("response.output_text.delta", { type: "response.output_text.delta", delta: "Hello" }),
+      validEvent("response.output_text.done", { type: "response.output_text.done", text: "Hello" }),
+      validEvent("response.content_part.done", { type: "response.content_part.done", part: { type: "output_text", text: "Hello" } }),
+      validEvent("response.output_item.done", { type: "response.output_item.done", item: { id: "msg_1", type: "message" } }),
+      validEvent("response.completed", { type: "response.completed", response: { id: "resp_1", object: "response", created_at: 1700000000, status: "completed", output: [] } }),
+    ];
+    const input = events.join("");
+
+    const output = await pipeChunks(stream, [input]);
+
+    expect(output).toBe(input);
   });
 });

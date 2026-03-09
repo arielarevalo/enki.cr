@@ -92,8 +92,8 @@ describe("Outline process", () => {
       expect(res.headers.get("Cache-Control")).toBe("no-cache");
 
       const text = await readStream(res.body!);
-      expect(text).toContain("data: ");
-      expect(text).toContain("chat.completion.chunk");
+      expect(text).toContain("event: response.output_text.delta");
+      expect(text).toContain("response.completed");
     });
 
     it("returns 400 with invalid JSON body", async () => {

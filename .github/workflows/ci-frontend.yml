@@ -19,3 +19,4 @@ jobs:
 
       - run: cd frontend && npm ci
       - run: cd frontend && npx tsc
+      - run: cd frontend && npm test

@@ -4,6 +4,18 @@ Backend Worker for Enki, serving the management API and outline processing pipel
 
 ## Architecture
 
+```mermaid
+graph LR
+    Request --> Auth["auth.ts"]
+    Auth --> Router["router.ts"]
+    Router --> Handler["*.handler.ts"]
+    Handler --> Service["*.service.ts"]
+    Service --> Repo["*.repository.ts"]
+    Service --> Agent["agent-provider.ts"]
+    Repo --- D1[(D1)]
+    Agent --- AgentsWorker["enki-agents"]
+```
+
 Four-layer vertical-slice architecture:
 
 | Layer | Purpose |

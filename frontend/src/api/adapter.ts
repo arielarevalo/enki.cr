@@ -13,7 +13,7 @@ export function setSources(sources: string[]) {
   pendingSources = sources;
 }
 
-function normalizeUrl(url: string): string {
+export function normalizeUrl(url: string): string {
   if (!/^https?:\/\//i.test(url)) return `https://${url}`;
   return url;
 }
