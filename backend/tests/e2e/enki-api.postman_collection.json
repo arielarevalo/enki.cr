@@ -1,0 +1,477 @@
+{
+  "info": {
+    "name": "enki-api",
+    "_postman_id": "enki-api-e2e",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "E2E tests for the enki-api backend Worker."
+  },
+  "variable": [
+    {
+      "key": "createdKeyId",
+      "value": ""
+    },
+    {
+      "key": "createdKeyRaw",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body has status ok', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin: Agent Setup",
+      "item": [
+        {
+          "name": "GET /api/admin/agents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "agents"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminKey}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has agents array', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.agents).to.be.an('array');",
+                  "  pm.expect(json.agents.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Save first agent id', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('firstAgentId', json.agents[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/admin/agents/active",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/agents/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "agents", "active"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"agent_id\": \"{{firstAgentId}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response confirms active agent', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.active_agent).to.eql(pm.collectionVariables.get('firstAgentId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/admin/agents/active",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/agents/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "agents", "active"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminKey}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Active agent matches set value', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.active_agent).to.eql(pm.collectionVariables.get('firstAgentId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin: Key Lifecycle",
+      "item": [
+        {
+          "name": "POST /api/admin/keys",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/keys",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "keys"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminKey}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has key details', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a('string');",
+                  "  pm.expect(json.key).to.be.a('string');",
+                  "  pm.expect(json.type).to.eql('client');",
+                  "});",
+                  "",
+                  "pm.test('Save created key', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('createdKeyId', json.id);",
+                  "  pm.collectionVariables.set('createdKeyRaw', json.key);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/admin/keys",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/keys",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "keys"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminKey}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has keys array', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.keys).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Created key appears in list', function () {",
+                  "  var json = pm.response.json();",
+                  "  var createdId = pm.collectionVariables.get('createdKeyId');",
+                  "  var found = json.keys.some(function (k) { return k.id === createdId; });",
+                  "  pm.expect(found).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/admin/keys/:id",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/keys/{{createdKeyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "keys", "{{createdKeyId}}"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminKey}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response confirms revocation', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.id).to.eql(pm.collectionVariables.get('createdKeyId'));",
+                  "  pm.expect(json.revoked).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Client: Outline Processing",
+      "item": [
+        {
+          "name": "POST /api/outline/process",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/outline/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "outline", "process"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sources\": [\"https://example.com\"]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type is text/event-stream', function () {",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('text/event-stream');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth Enforcement",
+      "item": [
+        {
+          "name": "POST /api/outline/process — no key returns 401",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/outline/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "outline", "process"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sources\": [\"https://example.com\"]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401 without auth', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error code is unauthorized', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.error).to.eql('unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/admin/keys — client key returns 403",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/keys",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "keys"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientKeyForAuthTest}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// This request uses the client key created earlier (before revocation).",
+                  "// The Key Lifecycle folder must run before Auth Enforcement to populate createdKeyRaw.",
+                  "// NOTE: Collection ordering matters. If the key was already revoked,",
+                  "// this will return 401 instead of 403. To test properly, move this",
+                  "// request before the DELETE in Key Lifecycle or create a fresh key here.",
+                  "",
+                  "// Create a fresh client key for this test",
+                  "var baseUrl = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                  "var adminKey = pm.environment.get('adminKey') || pm.collectionVariables.get('adminKey');",
+                  "",
+                  "pm.sendRequest({",
+                  "  url: baseUrl + '/api/admin/keys',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Authorization': 'Bearer ' + adminKey",
+                  "  }",
+                  "}, function (err, res) {",
+                  "  if (!err && res.code === 201) {",
+                  "    var json = res.json();",
+                  "    pm.collectionVariables.set('clientKeyForAuthTest', json.key);",
+                  "    pm.collectionVariables.set('clientKeyIdForAuthTest', json.id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Use the freshly created client key",
+                  "pm.test('Status is 403 with client key', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Error code is forbidden', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.error).to.eql('forbidden');",
+                  "});",
+                  "",
+                  "// Cleanup: revoke the test key",
+                  "var baseUrl = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                  "var adminKey = pm.environment.get('adminKey') || pm.collectionVariables.get('adminKey');",
+                  "var cleanupId = pm.collectionVariables.get('clientKeyIdForAuthTest');",
+                  "",
+                  "if (cleanupId) {",
+                  "  pm.sendRequest({",
+                  "    url: baseUrl + '/api/admin/keys/' + cleanupId,",
+                  "    method: 'DELETE',",
+                  "    header: {",
+                  "      'Authorization': 'Bearer ' + adminKey",
+                  "    }",
+                  "  }, function () {});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

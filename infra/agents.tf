@@ -9,3 +9,10 @@ resource "cloudflare_workers_script" "agents" {
     ignore_changes = [content, bindings, compatibility_date, compatibility_flags]
   }
 }
+
+resource "cloudflare_workers_custom_domain" "agents" {
+  account_id = var.account_id
+  zone_id    = data.cloudflare_zone.main.zone_id
+  hostname   = "agents.${var.domain}"
+  service    = cloudflare_workers_script.agents.script_name
+}

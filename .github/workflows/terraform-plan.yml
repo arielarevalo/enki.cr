@@ -33,6 +33,14 @@ jobs:
           terraform init \
             -backend-config="endpoints={s3=\"https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com\"}"
 
+      - name: Terraform Format Check
+        working-directory: infra
+        run: terraform fmt -check -diff
+
+      - name: Terraform Validate
+        working-directory: infra
+        run: terraform validate
+
       - name: Terraform Plan
         id: plan
         working-directory: infra

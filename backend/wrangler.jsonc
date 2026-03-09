@@ -12,6 +12,6 @@
     }
   ],
   "vars": {
-    "AGENTS_BASE_URL": "" // Set to enki-agents workers.dev URL after deployment
+    "AGENTS_BASE_URL": "https://agents.enki.cr"
   }
 }

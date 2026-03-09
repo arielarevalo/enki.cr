@@ -3,4 +3,13 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      "/api": {
+        target: process.env.ENKI_API_URL ?? "http://localhost:8787",
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 });

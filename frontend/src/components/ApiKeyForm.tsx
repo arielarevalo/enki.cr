@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { setApiKey } from "../api/adapter";
 
 interface Props {
   onValid: () => void;
@@ -10,11 +11,13 @@ export function ApiKeyForm({ onValid }: Props) {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (value.trim() === "test") {
+    const trimmed = value.trim();
+    if (trimmed) {
       setError("");
+      setApiKey(trimmed);
       onValid();
     } else {
-      setError('Invalid API key. Try "test".');
+      setError("API key is required");
     }
   }
 

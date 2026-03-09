@@ -7,8 +7,27 @@ on:
       - "agents/**"
   workflow_dispatch:
 
+concurrency:
+  group: deploy-agents
+  cancel-in-progress: false
+
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: agents/package-lock.json
+
+      - run: cd agents && npm ci
+      - run: cd agents && npm run type-check
+
   deploy:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -22,3 +22,13 @@ output "d1_database_id" {
   description = "D1 database ID for enki-db"
   value       = cloudflare_d1_database.main.id
 }
+
+output "backend_custom_domain" {
+  description = "Backend Worker custom domain"
+  value       = cloudflare_workers_custom_domain.backend.hostname
+}
+
+output "agents_custom_domain" {
+  description = "Agents Worker custom domain"
+  value       = cloudflare_workers_custom_domain.agents.hostname
+}
