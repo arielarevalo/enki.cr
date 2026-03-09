@@ -11,13 +11,18 @@ resource "cloudflare_workers_script" "backend" {
 }
 
 resource "cloudflare_workers_custom_domain" "backend" {
-  account_id = var.account_id
-  zone_id    = data.cloudflare_zone.main.zone_id
-  hostname   = "api.${var.domain}"
-  service    = cloudflare_workers_script.backend.script_name
+  account_id  = var.account_id
+  zone_id     = data.cloudflare_zone.main.zone_id
+  hostname    = "api.${var.domain}"
+  service     = cloudflare_workers_script.backend.script_name
+  environment = "production"
 }
 
 resource "cloudflare_d1_database" "main" {
   account_id = var.account_id
   name       = "enki-db"
+
+  lifecycle {
+    ignore_changes = [read_replication]
+  }
 }

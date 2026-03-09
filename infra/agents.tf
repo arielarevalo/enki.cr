@@ -11,8 +11,9 @@ resource "cloudflare_workers_script" "agents" {
 }
 
 resource "cloudflare_workers_custom_domain" "agents" {
-  account_id = var.account_id
-  zone_id    = data.cloudflare_zone.main.zone_id
-  hostname   = "agents.${var.domain}"
-  service    = cloudflare_workers_script.agents.script_name
+  account_id  = var.account_id
+  zone_id     = data.cloudflare_zone.main.zone_id
+  hostname    = "agents.${var.domain}"
+  service     = cloudflare_workers_script.agents.script_name
+  environment = "production"
 }
