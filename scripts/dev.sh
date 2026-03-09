@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'kill 0' INT TERM
+trap 'trap - EXIT INT TERM HUP; kill 0' EXIT INT TERM HUP
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Kill any orphaned dev processes from a previous run
+for port in 5173 8787 8788; do
+  lsof -ti "tcp:$port" | xargs kill 2>/dev/null || true
+done
 
 cd "$ROOT_DIR/agents"  && npm run dev &
 cd "$ROOT_DIR/backend"  && npm run dev &
