@@ -7,3 +7,7 @@ infra/*.tfstate
 infra/*.tfstate.backup
 infra/*.tfplan
 infra/plan.out
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

@@ -1,0 +1,333 @@
+:root {
+  --bg: #0A0A0A;
+  --bg-surface: #111111;
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.16);
+  --text: #F0F0F0;
+  --text-muted: rgba(255,255,255,0.44);
+  --text-dim: rgba(255,255,255,0.24);
+  --glow: rgba(120, 200, 160, 0.15);
+  --accent: #FFFFFF;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body { min-height: 100vh; }
+
+a { color: inherit; text-decoration: none; }
+
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 4px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  z-index: 100;
+}
+.skip:focus {
+  left: 1rem;
+  top: 1rem;
+  background: var(--text);
+  color: var(--bg);
+  padding: 0.5rem 1rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.875rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 2rem;
+}
+
+/* ─── Header ─── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10, 10, 10, 0.8);
+  border-bottom: 1px solid var(--border);
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 1rem;
+  overflow: hidden;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand__logo {
+  width: 28px;
+  height: 28px;
+}
+
+.brand__text {
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.header .btn {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.7rem;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* ─── Hero ─── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: lighten;
+  pointer-events: none;
+}
+
+.hero__bg svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 60% 40%, rgba(120,200,160,0.22) 0%, rgba(120,200,160,0.08) 25%, transparent 55%),
+    radial-gradient(circle at 60% 40%, rgba(255,255,255,0.08) 0%, transparent 18%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero > .container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+.hero__text {
+  flex: 0 1 60%;
+  margin-left: 3rem;
+}
+
+.hero__modal {
+  flex: 0 1 40%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.kicker {
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 1rem;
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  font-weight: 700;
+  font-size: clamp(3.97rem, 7.94vw + 1.32rem, 7.27rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  max-width: 14ch;
+}
+
+.subtitle {
+  font-weight: 400;
+  font-size: clamp(1.455rem, 0.66vw + 1.32rem, 1.78rem);
+  color: var(--text-muted);
+  max-width: 48ch;
+  line-height: 1.6;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: opacity 200ms;
+}
+.btn:hover { opacity: 0.9; }
+
+/* ─── Contact ─── */
+.contact {
+  position: relative;
+  padding: 8rem 0;
+  text-align: center;
+  overflow: hidden;
+}
+
+.contact__bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.contact__bg svg {
+  width: 600px;
+  height: 600px;
+  animation: rotate-slow 60s linear infinite;
+}
+
+.contact__content {
+  position: relative;
+  z-index: 1;
+}
+
+.contact h2 {
+  font-weight: 700;
+  font-size: clamp(2.5rem, 5vw + 1rem, 4.5rem);
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.contact__location {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.contact__email {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.25rem;
+  color: var(--text);
+  position: relative;
+  display: inline-block;
+}
+.contact__email::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--text);
+  transition: width 300ms;
+}
+.contact__email:hover::after {
+  width: 100%;
+}
+
+/* ─── Footer ─── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem 0;
+}
+
+.footer__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+footer small {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* ─── Animations ─── */
+@keyframes pulse {
+  0%, 100% { opacity: var(--base-opacity, 0.1); }
+  50% { opacity: calc(var(--base-opacity, 0.1) * 2.5); }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ray-pulse {
+  animation: pulse var(--pulse-duration, 5s) ease-in-out infinite;
+  animation-delay: var(--pulse-delay, 0s);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .hero > .container {
+    flex-direction: column;
+  }
+  .hero__text {
+    flex: none;
+    margin-left: 0;
+    padding-bottom: 2rem;
+  }
+  .hero__modal {
+    flex: none;
+    width: 100%;
+  }
+  h1 { max-width: 100%; }
+  .header .btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.65rem;
+  }
+  .contact__bg svg {
+    width: 400px;
+    height: 400px;
+  }
+  .footer__inner {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
+@media (max-width: 420px) {
+  .container { padding-inline: 1.25rem; }
+  .header .btn { padding: 0.35rem 0.75rem; font-size: 0.6rem; }
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .ray-pulse { animation: none; }
+  .contact__bg svg { animation: none; }
+  .contact__email::after {
+    transition: none;
+  }
+}

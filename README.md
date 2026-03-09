@@ -4,7 +4,7 @@
 
 - **Frontend**: Static HTML on Cloudflare Pages
 - **Backend**: Cloudflare Worker (`enki-api`)
-- **Agents**: Single Cloudflare Worker (`enki-agents`) with three Durable Object classes
+- **Agents**: Single Cloudflare Worker (`enki-agents`) with three Agent classes (Cloudflare Agents SDK)
 
 Architectural decisions are recorded in [`doc/adr/`](doc/adr/). See [ADR-0001](doc/adr/0001-record-architecture-decisions.md) for the format.
 
@@ -26,7 +26,7 @@ All Cloudflare resources are managed with Terraform in the [`infra/`](infra/) di
 |---------|-----------|
 | Pages project, Worker scripts, DNS records | Terraform |
 | Code deployment, content uploads | Wrangler |
-| DO bindings, migrations | Wrangler (`agents/wrangler.jsonc`) |
+| Agent bindings, migrations | Wrangler (`agents/wrangler.jsonc`) |
 | Local development | Wrangler (`wrangler dev`) |
 
 These tools never manage the same resource attributes. Worker scripts use `lifecycle { ignore_changes = [content] }` in Terraform so Wrangler owns the deployed code.
