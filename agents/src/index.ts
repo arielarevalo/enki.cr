@@ -10,9 +10,9 @@ export default {
 
     if (url.pathname === "/agents" || url.pathname === "/agents/") {
       const agents = [
-        { name: "OutlineDeepAgent", description: "Deep analysis/generation" },
-        { name: "OutlineReactAgent", description: "ReAct-style reasoning" },
-        { name: "OutlineWorkflowAgent", description: "Multi-step workflow orchestration" },
+        { name: "OutlineDeepAgent", description: "Deep Agent" },
+        { name: "OutlineReactAgent", description: "ReAct Agent" },
+        { name: "OutlineWorkflowAgent", description: "Workflow Agent" },
       ];
       return Response.json({ agents });
     }

@@ -11,7 +11,7 @@ export class OutlineDeepAgent extends BaseAgent {
     return "outline-deep";
   }
 
-  protected async processRequest(
+  async processRequest(
     sources: string[],
     logger: Logger,
   ): Promise<ReadableStream> {

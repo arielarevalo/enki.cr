@@ -18,6 +18,10 @@ describe("reducer", () => {
     expect(reducer("processing", { type: "PROCESSING_DONE" })).toBe("streaming");
   });
 
+  it("transitions to demo on BACK_TO_DEMO", () => {
+    expect(reducer("streaming", { type: "BACK_TO_DEMO" })).toBe("demo");
+  });
+
   it("transitions to apiKey on RESET", () => {
     expect(reducer("streaming", { type: "RESET" })).toBe("apiKey");
   });

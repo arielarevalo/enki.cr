@@ -284,7 +284,7 @@ describe("fetchDemos", () => {
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, opts] = fetchMock.mock.calls[0];
-    expect(url).toBe("/api/demos/");
+    expect(url).toBe("/api/demos");
     expect(opts.headers.Authorization).toBe("Bearer test-key");
     expect(result.demos).toEqual(mockDemos);
     expect(result.error).toBeUndefined();

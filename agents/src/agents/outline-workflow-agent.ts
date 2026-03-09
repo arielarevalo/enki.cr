@@ -11,7 +11,7 @@ export class OutlineWorkflowAgent extends BaseAgent {
     return "outline-workflow";
   }
 
-  protected async processRequest(
+  async processRequest(
     sources: string[],
     logger: Logger,
   ): Promise<ReadableStream> {

@@ -7,8 +7,8 @@ export class DeepLangChainAgent extends LangChainAgent {
   protected compile() {
     return new StateGraph(OutlineAnnotation)
       .addNode("process", async (_state: OutlineState) => ({
-        messages: [new AIMessage("Hello, I am the Deep Analysis Agent.")],
-        outline: "Hello, I am the Deep Analysis Agent.",
+        messages: [new AIMessage("Hello, I am the Deep Agent.")],
+        outline: "Hello, I am the Deep Agent.",
         stage: "complete",
       }))
       .addEdge("__start__", "process")

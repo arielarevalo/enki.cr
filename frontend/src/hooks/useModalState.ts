@@ -12,6 +12,7 @@ type Action =
   | { type: "DEMO_SELECTED" }
   | { type: "PROCESS" }
   | { type: "PROCESSING_DONE" }
+  | { type: "BACK_TO_DEMO" }
   | { type: "RESET" };
 
 export function reducer(_state: ModalState, action: Action): ModalState {
@@ -24,6 +25,8 @@ export function reducer(_state: ModalState, action: Action): ModalState {
       return "processing";
     case "PROCESSING_DONE":
       return "streaming";
+    case "BACK_TO_DEMO":
+      return "demo";
     case "RESET":
       return "apiKey";
   }

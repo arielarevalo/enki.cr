@@ -9,9 +9,10 @@ import ReactMarkdown from "react-markdown";
 interface EventStreamProps {
   expanded?: boolean;
   onToggleExpand?: () => void;
+  onBack?: () => void;
 }
 
-export function EventStream({ expanded, onToggleExpand }: EventStreamProps) {
+export function EventStream({ expanded, onToggleExpand, onBack }: EventStreamProps) {
   const thread = useThread();
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +39,13 @@ export function EventStream({ expanded, onToggleExpand }: EventStreamProps) {
       return (
         <div className="event-stream">
           <div className="result__header">
+            <button
+              className="result__back"
+              onClick={onBack}
+              aria-label="Start new analysis"
+            >
+              {"\u2190"}
+            </button>
             <button
               className="result__expand"
               onClick={onToggleExpand}

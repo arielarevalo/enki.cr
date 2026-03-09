@@ -317,9 +317,26 @@
 /* ─── Result Header ─── */
 .result__header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding-bottom: 0.5rem;
   flex-shrink: 0;
+}
+
+.result__back {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+  transition: color 200ms, border-color 200ms;
+}
+
+.result__back:hover {
+  color: var(--text);
+  border-color: var(--border-hover);
 }
 
 .result__expand {

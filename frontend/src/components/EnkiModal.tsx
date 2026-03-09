@@ -46,6 +46,11 @@ export function EnkiModal() {
     setExpanded((prev) => !prev);
   }, []);
 
+  const handleBack = useCallback(() => {
+    setExpanded(false);
+    dispatch({ type: "BACK_TO_DEMO" });
+  }, [dispatch]);
+
   const canExpand = state === "streaming" && !thread.isRunning;
   const isExpanded = canExpand && expanded;
   const sizeClass = `modal--${state}`;
@@ -72,6 +77,7 @@ export function EnkiModal() {
             <EventStream
               expanded={expanded}
               onToggleExpand={handleToggleExpand}
+              onBack={handleBack}
             />
           )}
         </div>

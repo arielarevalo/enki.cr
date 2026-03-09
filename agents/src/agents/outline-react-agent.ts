@@ -11,7 +11,7 @@ export class OutlineReactAgent extends BaseAgent {
     return "outline-react";
   }
 
-  protected async processRequest(
+  async processRequest(
     sources: string[],
     logger: Logger,
   ): Promise<ReadableStream> {

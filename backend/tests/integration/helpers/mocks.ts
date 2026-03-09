@@ -7,8 +7,9 @@ import type { AgentInfo } from "../../../src/agents/agent.types.js";
 import type { Demo } from "../../../src/demos/demo.types.js";
 
 export const DEFAULT_AGENTS: AgentInfo[] = [
-  { name: "OutlineDeepAgent", description: "Deep analysis agent" },
-  { name: "OutlineReactAgent", description: "ReAct reasoning agent" },
+  { name: "OutlineDeepAgent", description: "Deep Agent" },
+  { name: "OutlineReactAgent", description: "ReAct Agent" },
+  { name: "OutlineWorkflowAgent", description: "Workflow Agent" },
 ];
 
 export function createMockKeyRepository(

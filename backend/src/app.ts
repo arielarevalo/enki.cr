@@ -126,6 +126,9 @@ export function createApp(deps: AppDeps) {
   app.route("/api/admin/demos", adminDemoRoutes);
   app.route("/api/admin/keys", keyRoutes);
 
+  // Root → docs redirect
+  app.get("/", (c) => c.redirect("/docs"));
+
   // OpenAPI spec + Swagger UI
   app.doc("/openapi.json", {
     openapi: "3.0.3",

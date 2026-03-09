@@ -26,7 +26,7 @@ test("happy path: API key → demo → source → process → result", async ({ 
   });
 
   // Mock the demos endpoint
-  await page.route("**/api/demos/*", async (route) => {
+  await page.route("**/api/demos", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -111,7 +111,7 @@ test("happy path: API key → demo → source → process → result", async ({ 
   await page.getByRole("button", { name: "Go" }).click();
 
   // Select demo
-  await page.getByText("Outline").click();
+  await page.getByText("Outline", { exact: true }).click();
 
   // Enter source
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
@@ -156,7 +156,7 @@ test("process button disabled with no valid sources", async ({ page }) => {
     });
   });
 
-  await page.route("**/api/demos/*", async (route) => {
+  await page.route("**/api/demos", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -173,7 +173,7 @@ test("process button disabled with no valid sources", async ({ page }) => {
   await page.getByRole("button", { name: "Go" }).click();
 
   // Select demo
-  await page.getByText("Outline").click();
+  await page.getByText("Outline", { exact: true }).click();
 
   // Process button should be disabled with empty sources
   await expect(page.getByRole("button", { name: "Process" })).toBeDisabled();
@@ -188,7 +188,7 @@ test("add source button adds an input", async ({ page }) => {
     });
   });
 
-  await page.route("**/api/demos/*", async (route) => {
+  await page.route("**/api/demos", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -204,7 +204,7 @@ test("add source button adds an input", async ({ page }) => {
   await page.getByRole("button", { name: "Go" }).click();
 
   // Select demo
-  await page.getByText("Outline").click();
+  await page.getByText("Outline", { exact: true }).click();
 
   // Should start with 3 inputs
   await expect(page.getByRole("textbox")).toHaveCount(3);
@@ -223,7 +223,7 @@ test("API error (401) shows error text", async ({ page }) => {
     });
   });
 
-  await page.route("**/api/demos/*", async (route) => {
+  await page.route("**/api/demos", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -247,7 +247,7 @@ test("API error (401) shows error text", async ({ page }) => {
   await page.getByRole("button", { name: "Go" }).click();
 
   // Select demo
-  await page.getByText("Outline").click();
+  await page.getByText("Outline", { exact: true }).click();
 
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
   await page.getByRole("button", { name: "Process" }).click();
@@ -264,7 +264,7 @@ test("network error shows failure message", async ({ page }) => {
     });
   });
 
-  await page.route("**/api/demos/*", async (route) => {
+  await page.route("**/api/demos", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -284,7 +284,7 @@ test("network error shows failure message", async ({ page }) => {
   await page.getByRole("button", { name: "Go" }).click();
 
   // Select demo
-  await page.getByText("Outline").click();
+  await page.getByText("Outline", { exact: true }).click();
 
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
   await page.getByRole("button", { name: "Process" }).click();

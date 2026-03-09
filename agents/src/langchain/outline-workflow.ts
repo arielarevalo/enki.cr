@@ -8,9 +8,9 @@ export class WorkflowLangChainAgent extends LangChainAgent {
     return new StateGraph(OutlineAnnotation)
       .addNode("process", async (_state: OutlineState) => ({
         messages: [
-          new AIMessage("Hello, I am the Workflow Orchestration Agent."),
+          new AIMessage("Hello, I am the Workflow Agent."),
         ],
-        outline: "Hello, I am the Workflow Orchestration Agent.",
+        outline: "Hello, I am the Workflow Agent.",
         stage: "complete",
       }))
       .addEdge("__start__", "process")

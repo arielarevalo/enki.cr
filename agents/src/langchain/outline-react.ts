@@ -7,8 +7,8 @@ export class ReactLangChainAgent extends LangChainAgent {
   protected compile() {
     return new StateGraph(OutlineAnnotation)
       .addNode("process", async (_state: OutlineState) => ({
-        messages: [new AIMessage("Hello, I am the ReAct Reasoning Agent.")],
-        outline: "Hello, I am the ReAct Reasoning Agent.",
+        messages: [new AIMessage("Hello, I am the ReAct Agent.")],
+        outline: "Hello, I am the ReAct Agent.",
         stage: "complete",
       }))
       .addEdge("__start__", "process")
