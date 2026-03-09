@@ -8,7 +8,6 @@ export const ErrorSchema = z.object({
 });
 
 export const AgentSchema = z.object({
-  id: z.string(),
   name: z.string(),
   description: z.string(),
 });

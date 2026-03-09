@@ -3,7 +3,7 @@ import type { KeyLookup } from "../infrastructure/auth.js";
 import type { KeyService } from "../keys/key.service.js";
 import type { OutlineService } from "../outline/outline.service.js";
 import type { AgentProvider } from "../agents/agent-provider.js";
-import type { SettingsRepository } from "../infrastructure/settings.repository.js";
+import type { DemoService } from "../demos/demo.service.js";
 
 export interface AppVariables {
   logger: Logger;
@@ -11,7 +11,7 @@ export interface AppVariables {
   keyService: KeyService;
   outlineService: OutlineService;
   agentProvider: AgentProvider;
-  settingsRepository: SettingsRepository;
+  demoService: DemoService;
 }
 
 export type AppEnv = { Bindings: Env; Variables: AppVariables };

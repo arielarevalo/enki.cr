@@ -14,3 +14,16 @@ export const settings = sqliteTable("settings", {
   value: text("value").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const demos = sqliteTable("demos", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  activeAgent: text("active_agent"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const demoAgents = sqliteTable("demo_agents", {
+  agentName: text("agent_name").primaryKey(),
+  demoId: text("demo_id").notNull(),
+});

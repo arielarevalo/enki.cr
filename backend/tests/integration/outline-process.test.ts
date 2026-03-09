@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { createTestApp } from "./helpers/test-app.js";
 import {
   createMockKeyRepository,
-  createMockSettingsRepository,
+  createMockDemoRepository,
   createMockAgentProvider,
   createValidSseStream,
 } from "./helpers/mocks.js";
@@ -60,7 +60,6 @@ describe("Outline process", () => {
   describe("POST /api/outline/process", () => {
     it("returns 401 with no auth header", async () => {
       const app = createTestApp();
-
       const res = await app.fetch(
         new Request("https://test.local/api/outline/process", {
           method: "POST",
@@ -68,7 +67,6 @@ describe("Outline process", () => {
           body: JSON.stringify({ sources: VALID_SOURCES }),
         }),
       );
-
       expect(res.status).toBe(401);
       const body: any = await res.json();
       expect(body.error.type).toBe("unauthorized");
@@ -76,12 +74,13 @@ describe("Outline process", () => {
 
     it("returns 200 SSE stream with client key", async () => {
       const clientKey = await clientKeyEntry();
-      const settingsRepository = createMockSettingsRepository();
-      await settingsRepository.set("active_agent", "outline-deep");
+      const demoRepository = createMockDemoRepository();
+      // Seed demo with active agent
+      await demoRepository.create({ id: "outline", name: "Outline", description: "Test", activeAgent: "OutlineDeepAgent" });
       const agentProvider = createMockAgentProvider();
       const app = createTestApp({
         ...createAuthenticatedDeps(clientKey),
-        settingsRepository,
+        demoRepository,
         agentProvider,
       });
 
@@ -99,7 +98,6 @@ describe("Outline process", () => {
     it("returns 400 with invalid JSON body", async () => {
       const clientKey = await clientKeyEntry();
       const app = createTestApp(createAuthenticatedDeps(clientKey));
-
       const res = await app.fetch(
         new Request("https://test.local/api/outline/process", {
           method: "POST",
@@ -110,7 +108,6 @@ describe("Outline process", () => {
           body: "not valid json",
         }),
       );
-
       expect(res.status).toBe(400);
       const body: any = await res.json();
       expect(body.error.type).toBe("invalid_request");
@@ -119,9 +116,7 @@ describe("Outline process", () => {
     it("returns 400 with missing sources", async () => {
       const clientKey = await clientKeyEntry();
       const app = createTestApp(createAuthenticatedDeps(clientKey));
-
       const res = await app.fetch(clientRequest({}));
-
       expect(res.status).toBe(400);
       const body: any = await res.json();
       expect(body.error.type).toBe("invalid_request");
@@ -135,9 +130,7 @@ describe("Outline process", () => {
         { length: 11 },
         (_, i) => `https://example.com/article${i}`,
       );
-
       const res = await app.fetch(clientRequest({ sources }));
-
       expect(res.status).toBe(400);
       const body: any = await res.json();
       expect(body.error.type).toBe("invalid_request");
@@ -147,11 +140,9 @@ describe("Outline process", () => {
     it("returns 400 with invalid URL", async () => {
       const clientKey = await clientKeyEntry();
       const app = createTestApp(createAuthenticatedDeps(clientKey));
-
       const res = await app.fetch(
         clientRequest({ sources: ["not-a-url"] }),
       );
-
       expect(res.status).toBe(400);
       const body: any = await res.json();
       expect(body.error.type).toBe("invalid_request");
@@ -160,15 +151,14 @@ describe("Outline process", () => {
 
     it("returns 500 when no active agent is configured", async () => {
       const clientKey = await clientKeyEntry();
-      const settingsRepository = createMockSettingsRepository();
-      // No active_agent set
+      const demoRepository = createMockDemoRepository();
+      // Create demo without active agent
+      await demoRepository.create({ id: "outline", name: "Outline", description: "Test", activeAgent: null });
       const app = createTestApp({
         ...createAuthenticatedDeps(clientKey),
-        settingsRepository,
+        demoRepository,
       });
-
       const res = await app.fetch(clientRequest({ sources: VALID_SOURCES }));
-
       expect(res.status).toBe(500);
       const body: any = await res.json();
       expect(body.error.type).toBe("internal_error");
@@ -176,19 +166,17 @@ describe("Outline process", () => {
 
     it("returns 502 when agent invocation fails", async () => {
       const clientKey = await clientKeyEntry();
-      const settingsRepository = createMockSettingsRepository();
-      await settingsRepository.set("active_agent", "outline-deep");
+      const demoRepository = createMockDemoRepository();
+      await demoRepository.create({ id: "outline", name: "Outline", description: "Test", activeAgent: "OutlineDeepAgent" });
       const agentProvider = createMockAgentProvider({
         invoke: vi.fn().mockRejectedValue(new Error("Agent unreachable")),
       });
       const app = createTestApp({
         ...createAuthenticatedDeps(clientKey),
-        settingsRepository,
+        demoRepository,
         agentProvider,
       });
-
       const res = await app.fetch(clientRequest({ sources: VALID_SOURCES }));
-
       expect(res.status).toBe(502);
       const body: any = await res.json();
       expect(body.error.type).toBe("agent_error");

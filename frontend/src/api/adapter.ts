@@ -13,6 +13,44 @@ export function setSources(sources: string[]) {
   pendingSources = sources;
 }
 
+export interface Demo {
+  id: string;
+  name: string;
+  description: string;
+}
+
+let selectedDemo: Demo | null = null;
+
+export function setSelectedDemo(demo: Demo) {
+  selectedDemo = demo;
+}
+
+export function getSelectedDemo(): Demo | null {
+  return selectedDemo;
+}
+
+export async function fetchDemos(): Promise<{ demos: Demo[]; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/demos/`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) {
+      let message = "Failed to fetch demos";
+      try {
+        const body = await res.json();
+        if (body?.error?.message) message = body.error.message;
+      } catch {
+        // use default
+      }
+      return { demos: [], error: message };
+    }
+    const body = await res.json();
+    return { demos: body.demos ?? [] };
+  } catch {
+    return { demos: [], error: "Failed to connect to server" };
+  }
+}
+
 export function normalizeUrl(url: string): string {
   if (!/^https?:\/\//i.test(url)) return `https://${url}`;
   return url;

@@ -2,12 +2,14 @@ import { useReducer } from "react";
 
 export type ModalState =
   | "apiKey"
+  | "demo"
   | "sources"
   | "processing"
   | "streaming";
 
 type Action =
   | { type: "API_KEY_VALID" }
+  | { type: "DEMO_SELECTED" }
   | { type: "PROCESS" }
   | { type: "PROCESSING_DONE" }
   | { type: "RESET" };
@@ -15,6 +17,8 @@ type Action =
 export function reducer(_state: ModalState, action: Action): ModalState {
   switch (action.type) {
     case "API_KEY_VALID":
+      return "demo";
+    case "DEMO_SELECTED":
       return "sources";
     case "PROCESS":
       return "processing";

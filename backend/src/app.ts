@@ -5,27 +5,31 @@ import { HTTPException } from "hono/http-exception";
 import type { AppEnv } from "./shared/types.js";
 import type { Logger } from "./infrastructure/logger.js";
 import type { KeyRepository } from "./keys/key-repository.js";
-import type { SettingsRepository } from "./infrastructure/settings.repository.js";
+import type { DemoRepository } from "./demos/demo-repository.js";
 import type { AgentProvider } from "./agents/agent-provider.js";
 import { KeyService } from "./keys/key.service.js";
 import { OutlineService } from "./outline/outline.service.js";
+import { DemoService } from "./demos/demo.service.js";
 import { healthRoutes } from "./health/health.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { outlineRoutes } from "./outline/outline.routes.js";
 import { agentRoutes } from "./agents/agents.routes.js";
 import { keyRoutes } from "./keys/keys.routes.js";
+import { demoRoutes } from "./demos/demos.routes.js";
+import { adminDemoRoutes } from "./demos/admin-demos.routes.js";
 
 export interface AppDeps {
   logger: Logger;
   keyRepository: KeyRepository;
-  settingsRepository: SettingsRepository;
+  demoRepository: DemoRepository;
   agentProvider: AgentProvider;
 }
 
 export function createApp(deps: AppDeps) {
   const keyService = new KeyService(deps.keyRepository);
+  const demoService = new DemoService(deps.demoRepository, deps.agentProvider);
   const outlineService = new OutlineService(
-    deps.settingsRepository,
+    deps.demoRepository,
     deps.agentProvider,
     deps.logger,
   );
@@ -53,7 +57,7 @@ export function createApp(deps: AppDeps) {
     c.set("keyService", keyService);
     c.set("outlineService", outlineService);
     c.set("agentProvider", deps.agentProvider);
-    c.set("settingsRepository", deps.settingsRepository);
+    c.set("demoService", demoService);
     await next();
   });
 
@@ -116,8 +120,10 @@ export function createApp(deps: AppDeps) {
   // Mount routes
   app.route("/health", healthRoutes);
   app.route("/api/auth", authRoutes);
+  app.route("/api/demos", demoRoutes);
   app.route("/api/outline", outlineRoutes);
   app.route("/api/admin/agents", agentRoutes);
+  app.route("/api/admin/demos", adminDemoRoutes);
   app.route("/api/admin/keys", keyRoutes);
 
   // OpenAPI spec + Swagger UI

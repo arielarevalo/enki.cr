@@ -11,7 +11,7 @@ function sseEvent(event: string, data: object): string {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
-test("happy path: API key → source → process → result", async ({ page }) => {
+test("happy path: API key → demo → source → process → result", async ({ page }) => {
   const respId = "resp_test";
   const msgId = "msg_test";
   const fullText = "# Analysis\nResults here.";
@@ -22,6 +22,17 @@ test("happy path: API key → source → process → result", async ({ page }) =
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({ valid: true }),
+    });
+  });
+
+  // Mock the demos endpoint
+  await page.route("**/api/demos/*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        demos: [{ id: "outline", name: "Outline", description: "Process sources into a structured outline" }],
+      }),
     });
   });
 
@@ -99,6 +110,9 @@ test("happy path: API key → source → process → result", async ({ page }) =
   await page.getByPlaceholder("Enter your API key").fill("test-key");
   await page.getByRole("button", { name: "Go" }).click();
 
+  // Select demo
+  await page.getByText("Outline").click();
+
   // Enter source
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
   await page.getByRole("button", { name: "Process" }).click();
@@ -142,11 +156,24 @@ test("process button disabled with no valid sources", async ({ page }) => {
     });
   });
 
+  await page.route("**/api/demos/*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        demos: [{ id: "outline", name: "Outline", description: "Process sources into a structured outline" }],
+      }),
+    });
+  });
+
   await page.goto("/");
 
   // Enter API key first
   await page.getByPlaceholder("Enter your API key").fill("test-key");
   await page.getByRole("button", { name: "Go" }).click();
+
+  // Select demo
+  await page.getByText("Outline").click();
 
   // Process button should be disabled with empty sources
   await expect(page.getByRole("button", { name: "Process" })).toBeDisabled();
@@ -161,10 +188,23 @@ test("add source button adds an input", async ({ page }) => {
     });
   });
 
+  await page.route("**/api/demos/*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        demos: [{ id: "outline", name: "Outline", description: "Process sources into a structured outline" }],
+      }),
+    });
+  });
+
   await page.goto("/");
 
   await page.getByPlaceholder("Enter your API key").fill("test-key");
   await page.getByRole("button", { name: "Go" }).click();
+
+  // Select demo
+  await page.getByText("Outline").click();
 
   // Should start with 3 inputs
   await expect(page.getByRole("textbox")).toHaveCount(3);
@@ -183,6 +223,16 @@ test("API error (401) shows error text", async ({ page }) => {
     });
   });
 
+  await page.route("**/api/demos/*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        demos: [{ id: "outline", name: "Outline", description: "Process sources into a structured outline" }],
+      }),
+    });
+  });
+
   await page.route("**/api/outline/process", async (route) => {
     await route.fulfill({
       status: 401,
@@ -195,6 +245,9 @@ test("API error (401) shows error text", async ({ page }) => {
 
   await page.getByPlaceholder("Enter your API key").fill("bad-key");
   await page.getByRole("button", { name: "Go" }).click();
+
+  // Select demo
+  await page.getByText("Outline").click();
 
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
   await page.getByRole("button", { name: "Process" }).click();
@@ -211,6 +264,16 @@ test("network error shows failure message", async ({ page }) => {
     });
   });
 
+  await page.route("**/api/demos/*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        demos: [{ id: "outline", name: "Outline", description: "Process sources into a structured outline" }],
+      }),
+    });
+  });
+
   await page.route("**/api/outline/process", async (route) => {
     await route.abort("connectionrefused");
   });
@@ -219,6 +282,9 @@ test("network error shows failure message", async ({ page }) => {
 
   await page.getByPlaceholder("Enter your API key").fill("test-key");
   await page.getByRole("button", { name: "Go" }).click();
+
+  // Select demo
+  await page.getByText("Outline").click();
 
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
   await page.getByRole("button", { name: "Process" }).click();

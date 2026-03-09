@@ -13,9 +13,21 @@ npx wrangler d1 execute enki-db --local \
   --command="INSERT OR IGNORE INTO api_keys (id, key_hash, key_prefix, type, created_at) VALUES ('local-admin', '${KEY_HASH}', 'enki_local_', 'admin', datetime('now'));" \
   < /dev/null 2>&1 | tail -1
 
-# 3. Set default active agent (INSERT OR REPLACE — idempotent)
+# 3. Seed demo and agent assignments (INSERT OR REPLACE — idempotent)
 npx wrangler d1 execute enki-db --local \
-  --command="INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('active_agent', 'outline-react', datetime('now'));" \
+  --command="INSERT OR REPLACE INTO demos (id, name, description, active_agent, created_at) VALUES ('outline', 'Outline', 'Process sources into a structured outline', 'OutlineReactAgent', datetime('now'));" \
+  < /dev/null 2>&1 | tail -1
+
+npx wrangler d1 execute enki-db --local \
+  --command="INSERT OR REPLACE INTO demo_agents (agent_name, demo_id) VALUES ('OutlineDeepAgent', 'outline');" \
+  < /dev/null 2>&1 | tail -1
+
+npx wrangler d1 execute enki-db --local \
+  --command="INSERT OR REPLACE INTO demo_agents (agent_name, demo_id) VALUES ('OutlineReactAgent', 'outline');" \
+  < /dev/null 2>&1 | tail -1
+
+npx wrangler d1 execute enki-db --local \
+  --command="INSERT OR REPLACE INTO demo_agents (agent_name, demo_id) VALUES ('OutlineWorkflowAgent', 'outline');" \
   < /dev/null 2>&1 | tail -1
 
 echo "Admin key: ${LOCAL_ADMIN_KEY}"

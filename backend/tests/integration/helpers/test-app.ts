@@ -2,7 +2,7 @@ import type { AppDeps } from "../../../src/app.js";
 import { createApp } from "../../../src/app.js";
 import {
   createMockKeyRepository,
-  createMockSettingsRepository,
+  createMockDemoRepository,
   createMockAgentProvider,
   createMockLogger,
 } from "./mocks.js";
@@ -11,7 +11,7 @@ function defaultMocks(): AppDeps {
   return {
     logger: createMockLogger(),
     keyRepository: createMockKeyRepository(),
-    settingsRepository: createMockSettingsRepository(),
+    demoRepository: createMockDemoRepository(),
     agentProvider: createMockAgentProvider(),
   };
 }

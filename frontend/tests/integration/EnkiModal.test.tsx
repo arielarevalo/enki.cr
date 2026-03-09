@@ -24,7 +24,11 @@ vi.mock("@assistant-ui/react", () => {
 vi.mock("../../src/api/adapter", () => ({
   setApiKey: vi.fn(),
   setSources: vi.fn(),
+  setSelectedDemo: vi.fn(),
   validateApiKey: vi.fn().mockResolvedValue({ valid: true }),
+  fetchDemos: vi.fn().mockResolvedValue({
+    demos: [{ id: "outline", name: "Outline", description: "Process sources into a structured outline" }],
+  }),
 }));
 
 import { setSources } from "../../src/api/adapter";
@@ -41,12 +45,27 @@ describe("EnkiModal", () => {
     expect(screen.getByPlaceholderText("Enter your API key")).toBeInTheDocument();
   });
 
-  it("after API key submission shows sources form", async () => {
+  it("after API key submission shows demo selector", async () => {
     const user = userEvent.setup();
     render(<EnkiModal />);
 
     await user.type(screen.getByPlaceholderText("Enter your API key"), "test-key");
     await user.click(screen.getByRole("button", { name: "Go" }));
+
+    expect(screen.getByRole("dialog")).toHaveAttribute("aria-label", "Select a demo");
+    expect(screen.getByText("Select a demo")).toBeInTheDocument();
+  });
+
+  it("after demo selection shows sources form", async () => {
+    const user = userEvent.setup();
+    render(<EnkiModal />);
+
+    // API key step
+    await user.type(screen.getByPlaceholderText("Enter your API key"), "test-key");
+    await user.click(screen.getByRole("button", { name: "Go" }));
+
+    // Demo selection step - click the demo card
+    await user.click(await screen.findByText("Outline"));
 
     expect(screen.getByRole("dialog")).toHaveAttribute("aria-label", "Add sources for analysis");
     expect(screen.getByText("Add sources")).toBeInTheDocument();
@@ -59,6 +78,9 @@ describe("EnkiModal", () => {
     // Step through API key
     await user.type(screen.getByPlaceholderText("Enter your API key"), "test-key");
     await user.click(screen.getByRole("button", { name: "Go" }));
+
+    // Step through demo selection
+    await user.click(await screen.findByText("Outline"));
 
     // Fill in a source and submit
     const inputs = screen.getAllByRole("textbox");

@@ -6,9 +6,20 @@ export { OutlineWorkflowAgent } from "./agents/outline-workflow-agent.js";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/agents" || url.pathname === "/agents/") {
+      const agents = [
+        { name: "OutlineDeepAgent", description: "Deep analysis/generation" },
+        { name: "OutlineReactAgent", description: "ReAct-style reasoning" },
+        { name: "OutlineWorkflowAgent", description: "Multi-step workflow orchestration" },
+      ];
+      return Response.json({ agents });
+    }
+
     const response = await routeAgentRequest(request, env);
     if (response) return response;
 
     return new Response("Not Found", { status: 404 });
   },
-};
+} satisfies ExportedHandler<Env>;

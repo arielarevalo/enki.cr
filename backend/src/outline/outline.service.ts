@@ -1,17 +1,17 @@
 import type { AgentProvider } from "../agents/agent-provider.js";
-import type { SettingsRepository } from "../infrastructure/settings.repository.js";
+import type { DemoRepository } from "../demos/demo-repository.js";
 import { createSseValidationStream } from "../infrastructure/sse-validation.js";
 import type { Logger } from "../infrastructure/logger.js";
 
 export class OutlineService {
   constructor(
-    private settingsRepository: SettingsRepository,
+    private demoRepository: DemoRepository,
     private agentProvider: AgentProvider,
     private logger: Logger,
   ) {}
 
   async process(sources: string[]): Promise<ReadableStream> {
-    const activeAgent = await this.settingsRepository.get("active_agent");
+    const activeAgent = await this.demoRepository.getActiveAgent("outline");
     if (!activeAgent) {
       throw new NoActiveAgentError();
     }

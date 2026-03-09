@@ -1,21 +1,14 @@
 import { vi } from "vitest";
 import type { KeyRepository } from "../../../src/keys/key-repository.js";
-import type { SettingsRepository } from "../../../src/infrastructure/settings.repository.js";
+import type { DemoRepository } from "../../../src/demos/demo-repository.js";
 import type { AgentProvider } from "../../../src/agents/agent-provider.js";
 import type { Logger } from "../../../src/infrastructure/logger.js";
 import type { AgentInfo } from "../../../src/agents/agent.types.js";
+import type { Demo } from "../../../src/demos/demo.types.js";
 
 export const DEFAULT_AGENTS: AgentInfo[] = [
-  {
-    id: "outline-deep",
-    name: "Outline Deep",
-    description: "Deep analysis agent",
-  },
-  {
-    id: "outline-react",
-    name: "Outline React",
-    description: "ReAct reasoning agent",
-  },
+  { name: "OutlineDeepAgent", description: "Deep analysis agent" },
+  { name: "OutlineReactAgent", description: "ReAct reasoning agent" },
 ];
 
 export function createMockKeyRepository(
@@ -31,14 +24,50 @@ export function createMockKeyRepository(
   };
 }
 
-export function createMockSettingsRepository(
-  overrides?: Partial<SettingsRepository>,
-): SettingsRepository {
-  const store = new Map<string, string>();
+export function createMockDemoRepository(
+  overrides?: Partial<DemoRepository>,
+): DemoRepository {
+  const demos = new Map<string, Demo>();
+  const agentAssignments = new Map<string, string>(); // agentName -> demoId
+
   return {
-    get: vi.fn(async (key: string) => store.get(key) ?? null),
-    set: vi.fn(async (key: string, value: string) => {
-      store.set(key, value);
+    list: vi.fn(async () => Array.from(demos.values())),
+    findById: vi.fn(async (id: string) => demos.get(id) ?? null),
+    create: vi.fn(async (demo: Omit<Demo, "createdAt">) => {
+      demos.set(demo.id, { ...demo, createdAt: new Date().toISOString() });
+    }),
+    update: vi.fn(async (id: string, fields: { name?: string; description?: string }) => {
+      const demo = demos.get(id);
+      if (demo) demos.set(id, { ...demo, ...fields });
+    }),
+    remove: vi.fn(async (id: string) => {
+      demos.delete(id);
+      for (const [agent, dId] of agentAssignments) {
+        if (dId === id) agentAssignments.delete(agent);
+      }
+    }),
+    setActiveAgent: vi.fn(async (demoId: string, agentName: string | null) => {
+      const demo = demos.get(demoId);
+      if (demo) demos.set(demoId, { ...demo, activeAgent: agentName });
+    }),
+    getActiveAgent: vi.fn(async (demoId: string) => {
+      return demos.get(demoId)?.activeAgent ?? null;
+    }),
+    assignAgent: vi.fn(async (demoId: string, agentName: string) => {
+      agentAssignments.set(agentName, demoId);
+    }),
+    unassignAgent: vi.fn(async (agentName: string) => {
+      agentAssignments.delete(agentName);
+    }),
+    getAgentNames: vi.fn(async (demoId: string) => {
+      const names: string[] = [];
+      for (const [agent, dId] of agentAssignments) {
+        if (dId === demoId) names.push(agent);
+      }
+      return names;
+    }),
+    getDemoForAgent: vi.fn(async (agentName: string) => {
+      return agentAssignments.get(agentName) ?? null;
     }),
     ...overrides,
   };
@@ -48,7 +77,7 @@ export function createMockAgentProvider(
   overrides?: Partial<AgentProvider>,
 ): AgentProvider {
   return {
-    list: vi.fn().mockReturnValue(DEFAULT_AGENTS),
+    list: vi.fn().mockResolvedValue(DEFAULT_AGENTS),
     invoke: vi.fn().mockResolvedValue(createValidSseStream()),
     ...overrides,
   };

@@ -4,7 +4,7 @@ import type { SqlTagFn } from "../langchain/checkpoint-saver.js";
 import { ReactLangChainAgent } from "../langchain/outline-react.js";
 
 export class OutlineReactAgent extends BaseOutlineAgent {
-  getAgentType(): string {
+  getAgentId(): string {
     return "outline-react";
   }
 

@@ -4,7 +4,7 @@ import type { SqlTagFn } from "../langchain/checkpoint-saver.js";
 import { DeepLangChainAgent } from "../langchain/outline-deep.js";
 
 export class OutlineDeepAgent extends BaseOutlineAgent {
-  getAgentType(): string {
+  getAgentId(): string {
     return "outline-deep";
   }
 

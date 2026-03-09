@@ -4,7 +4,7 @@ import type { SqlTagFn } from "../langchain/checkpoint-saver.js";
 import { WorkflowLangChainAgent } from "../langchain/outline-workflow.js";
 
 export class OutlineWorkflowAgent extends BaseOutlineAgent {
-  getAgentType(): string {
+  getAgentId(): string {
     return "outline-workflow";
   }
 

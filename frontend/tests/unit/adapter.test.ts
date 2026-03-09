@@ -5,6 +5,9 @@ let normalizeUrl: typeof import("../../src/api/adapter").normalizeUrl;
 let setApiKey: typeof import("../../src/api/adapter").setApiKey;
 let setSources: typeof import("../../src/api/adapter").setSources;
 let enkiAdapter: typeof import("../../src/api/adapter").enkiAdapter;
+let fetchDemos: typeof import("../../src/api/adapter").fetchDemos;
+let setSelectedDemo: typeof import("../../src/api/adapter").setSelectedDemo;
+let getSelectedDemo: typeof import("../../src/api/adapter").getSelectedDemo;
 
 beforeEach(async () => {
   vi.resetModules();
@@ -14,6 +17,9 @@ beforeEach(async () => {
   setApiKey = mod.setApiKey;
   setSources = mod.setSources;
   enkiAdapter = mod.enkiAdapter;
+  fetchDemos = mod.fetchDemos;
+  setSelectedDemo = mod.setSelectedDemo;
+  getSelectedDemo = mod.getSelectedDemo;
 });
 
 function sseChunk(data: string): Uint8Array {
@@ -261,5 +267,53 @@ describe("enkiAdapter.run()", () => {
 
     const results = await collectResults(enkiAdapter);
     expect(results[0][0].text).toBe("Error: No response stream");
+  });
+});
+
+describe("fetchDemos", () => {
+  it("fetches demos with auth header", async () => {
+    const mockDemos = [{ id: "outline", name: "Outline", description: "Test" }];
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ demos: mockDemos }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    setApiKey("test-key");
+    const result = await fetchDemos();
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, opts] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/demos/");
+    expect(opts.headers.Authorization).toBe("Bearer test-key");
+    expect(result.demos).toEqual(mockDemos);
+    expect(result.error).toBeUndefined();
+  });
+
+  it("returns error on non-OK response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ error: { message: "Unauthorized" } }),
+    }));
+
+    const result = await fetchDemos();
+    expect(result.demos).toEqual([]);
+    expect(result.error).toBe("Unauthorized");
+  });
+
+  it("returns error on network failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
+
+    const result = await fetchDemos();
+    expect(result.demos).toEqual([]);
+    expect(result.error).toBe("Failed to connect to server");
+  });
+});
+
+describe("selectedDemo", () => {
+  it("tracks selected demo", () => {
+    const demo = { id: "outline", name: "Outline", description: "Test" };
+    setSelectedDemo(demo);
+    expect(getSelectedDemo()).toEqual(demo);
   });
 });

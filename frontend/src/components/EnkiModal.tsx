@@ -4,6 +4,7 @@ import { useModalState, type ModalState } from "../hooks/useModalState";
 import { useThreadRuntime, useThread } from "@assistant-ui/react";
 import { setSources } from "../api/adapter";
 import { ApiKeyForm } from "./ApiKeyForm";
+import { DemoSelector } from "./DemoSelector";
 import { SourcesForm } from "./SourcesForm";
 import { ProcessingThrobber } from "./ProcessingThrobber";
 import { EventStream } from "./EventStream";
@@ -16,6 +17,10 @@ export function EnkiModal() {
 
   const handleApiKeyValid = useCallback(() => {
     dispatch({ type: "API_KEY_VALID" });
+  }, [dispatch]);
+
+  const handleDemoSelected = useCallback(() => {
+    dispatch({ type: "DEMO_SELECTED" });
   }, [dispatch]);
 
   const handleProcess = useCallback(
@@ -56,6 +61,9 @@ export function EnkiModal() {
           {state === "apiKey" && (
             <ApiKeyForm onValid={handleApiKeyValid} />
           )}
+          {state === "demo" && (
+            <DemoSelector onSelect={handleDemoSelected} />
+          )}
           {state === "sources" && (
             <SourcesForm onProcess={handleProcess} />
           )}
@@ -88,6 +96,8 @@ function ariaLabelFor(state: ModalState): string {
   switch (state) {
     case "apiKey":
       return "Enter API key";
+    case "demo":
+      return "Select a demo";
     case "sources":
       return "Add sources for analysis";
     case "processing":

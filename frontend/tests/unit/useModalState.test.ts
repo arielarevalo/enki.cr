@@ -2,8 +2,12 @@ import { describe, it, expect } from "vitest";
 import { reducer } from "../../src/hooks/useModalState";
 
 describe("reducer", () => {
-  it("transitions from apiKey to sources on API_KEY_VALID", () => {
-    expect(reducer("apiKey", { type: "API_KEY_VALID" })).toBe("sources");
+  it("transitions from apiKey to demo on API_KEY_VALID", () => {
+    expect(reducer("apiKey", { type: "API_KEY_VALID" })).toBe("demo");
+  });
+
+  it("transitions from demo to sources on DEMO_SELECTED", () => {
+    expect(reducer("demo", { type: "DEMO_SELECTED" })).toBe("sources");
   });
 
   it("transitions to processing on PROCESS", () => {
@@ -18,8 +22,11 @@ describe("reducer", () => {
     expect(reducer("streaming", { type: "RESET" })).toBe("apiKey");
   });
 
-  it("follows full sequence: apiKey → sources → processing → streaming", () => {
+  it("follows full sequence: apiKey → demo → sources → processing → streaming", () => {
     let state = reducer("apiKey", { type: "API_KEY_VALID" });
+    expect(state).toBe("demo");
+
+    state = reducer(state, { type: "DEMO_SELECTED" });
     expect(state).toBe("sources");
 
     state = reducer(state, { type: "PROCESS" });

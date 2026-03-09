@@ -39,6 +39,11 @@
   height: 120px;
 }
 
+.modal--demo {
+  width: 380px;
+  height: 280px;
+}
+
 .modal--sources,
 .modal--processing,
 .modal--streaming {
@@ -398,9 +403,73 @@
   font-weight: 700;
 }
 
+/* ─── Demo Selector ─── */
+.demo-selector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.demo-selector__header {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.demo-selector__list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-selector__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 200ms, background 200ms;
+}
+
+.demo-selector__card:hover {
+  border-color: var(--border-hover);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.demo-selector__card-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.demo-selector__card-desc {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.demo-selector__loading {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem 0;
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .modal--apiKey,
+  .modal--demo,
   .modal--sources,
   .modal--processing,
   .modal--streaming {
