@@ -11,6 +11,10 @@
       { "name": "OUTLINE_WORKFLOW_AGENT", "class_name": "OutlineWorkflowAgent" }
     ]
   },
+  // OPENROUTER_API_KEY is set via secrets; declared here so wrangler types includes it
+  "vars": {
+    "OPENROUTER_API_KEY": ""
+  },
   "migrations": [
     {
       "tag": "v1",
