@@ -63,7 +63,7 @@ export function EventStream({ expanded, onToggleExpand }: EventStreamProps) {
       <div className="event-stream__status">
         <div className="event-stream__spinner" />
       </div>
-      <ThreadPrimitive.Root>
+      <ThreadPrimitive.Root style={{ display: 'contents' }}>
         <div ref={viewportRef} className="event-stream__viewport">
           <ThreadPrimitive.Messages
             components={{
