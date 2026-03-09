@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import {
   ThreadPrimitive,
   MessagePrimitive,
@@ -12,6 +13,20 @@ interface EventStreamProps {
 
 export function EventStream({ expanded, onToggleExpand }: EventStreamProps) {
   const thread = useThread();
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const observer = new MutationObserver(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+
+    observer.observe(el, { childList: true, subtree: true, characterData: true });
+
+    return () => observer.disconnect();
+  }, []);
 
   if (!thread.isRunning) {
     const lastMessage = [...thread.messages].reverse().find((m) => m.role === "assistant");
@@ -49,14 +64,14 @@ export function EventStream({ expanded, onToggleExpand }: EventStreamProps) {
         <div className="event-stream__spinner" />
       </div>
       <ThreadPrimitive.Root>
-        <ThreadPrimitive.Viewport autoScroll className="event-stream__viewport">
+        <div ref={viewportRef} className="event-stream__viewport">
           <ThreadPrimitive.Messages
             components={{
               UserMessage: () => null,
               AssistantMessage: AssistantMessage,
             }}
           />
-        </ThreadPrimitive.Viewport>
+        </div>
       </ThreadPrimitive.Root>
     </div>
   );
