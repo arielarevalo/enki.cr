@@ -269,6 +269,22 @@
   overflow: hidden;
 }
 
+.event-stream__status {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  flex-shrink: 0;
+}
+
+.event-stream__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 .event-stream__viewport {
   flex: 1;
   overflow-y: auto;
@@ -286,6 +302,7 @@
 }
 
 .event-stream__text {
+  display: inline;
   font-family: 'Space Mono', monospace;
   font-size: 0.8rem;
   line-height: 1.6;
@@ -406,7 +423,8 @@
     animation: none;
   }
 
-  .processing__spinner {
+  .processing__spinner,
+  .event-stream__spinner {
     animation: none;
     border-top-color: var(--text);
     opacity: 0.5;

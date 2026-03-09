@@ -13,39 +13,53 @@ import {
 } from "./events.js";
 
 /**
+ * Extracts text content from a LangGraph stream item.
+ * streamMode: "messages" yields [MessageChunk, metadata] tuples;
+ * static/test streams yield plain { content: string } objects.
+ */
+function extractContent(item: unknown): string {
+  const message = Array.isArray(item) ? item[0] : item;
+  if (message && typeof message === "object" && "content" in message) {
+    const content = (message as { content: unknown }).content;
+    return typeof content === "string" ? content : "";
+  }
+  return "";
+}
+
+/**
  * Creates an SSE response stream from a LangGraph message stream.
  * Transforms LangGraph stream events into OpenAI Responses API SSE format.
  */
 export function createLangGraphSseStream(
-  graphStream: AsyncIterable<{ content?: string }>,
+  graphStream: AsyncIterable<unknown>,
   logger: Logger,
 ): ReadableStream {
   const encoder = new TextEncoder();
   const ids = generateIds();
   let fullText = "";
+  let seq = 0;
 
   return new ReadableStream({
     async start(controller) {
       try {
-        controller.enqueue(encoder.encode(responseCreated(ids)));
-        controller.enqueue(encoder.encode(outputItemAdded(ids)));
-        controller.enqueue(encoder.encode(contentPartAdded(ids)));
+        controller.enqueue(encoder.encode(responseCreated(ids, seq++)));
+        controller.enqueue(encoder.encode(outputItemAdded(ids, seq++)));
+        controller.enqueue(encoder.encode(contentPartAdded(ids, seq++)));
 
-        for await (const chunk of graphStream) {
-          const content =
-            typeof chunk.content === "string" ? chunk.content : "";
+        for await (const item of graphStream) {
+          const content = extractContent(item);
           if (content) {
             fullText += content;
             controller.enqueue(
-              encoder.encode(outputTextDelta(ids, content)),
+              encoder.encode(outputTextDelta(ids, seq++, content)),
             );
           }
         }
 
-        controller.enqueue(encoder.encode(outputTextDone(ids, fullText)));
-        controller.enqueue(encoder.encode(contentPartDone(ids, fullText)));
-        controller.enqueue(encoder.encode(outputItemDone(ids, fullText)));
-        controller.enqueue(encoder.encode(responseCompleted(ids, fullText)));
+        controller.enqueue(encoder.encode(outputTextDone(ids, seq++, fullText)));
+        controller.enqueue(encoder.encode(contentPartDone(ids, seq++, fullText)));
+        controller.enqueue(encoder.encode(outputItemDone(ids, seq++, fullText)));
+        controller.enqueue(encoder.encode(responseCompleted(ids, seq++, fullText)));
         controller.close();
       } catch (err) {
         const message =
@@ -61,28 +75,15 @@ export function createLangGraphSseStream(
 }
 
 /**
- * Creates a mock SSE response stream (preserves original behavior).
+ * Creates a static async iterable for use when LLM is not configured.
  */
-export function createMockResponseStream(sources: string[]): ReadableStream {
-  const encoder = new TextEncoder();
-  const ids = generateIds();
-
-  const fullText = JSON.stringify({
-    message: "Hello from Enki",
-    sources_received: sources,
-  });
-
-  return new ReadableStream({
-    start(controller) {
-      controller.enqueue(encoder.encode(responseCreated(ids)));
-      controller.enqueue(encoder.encode(outputItemAdded(ids)));
-      controller.enqueue(encoder.encode(contentPartAdded(ids)));
-      controller.enqueue(encoder.encode(outputTextDelta(ids, fullText)));
-      controller.enqueue(encoder.encode(outputTextDone(ids, fullText)));
-      controller.enqueue(encoder.encode(contentPartDone(ids, fullText)));
-      controller.enqueue(encoder.encode(outputItemDone(ids, fullText)));
-      controller.enqueue(encoder.encode(responseCompleted(ids, fullText)));
-      controller.close();
-    },
-  });
+export async function* staticContent(
+  sources: string[],
+): AsyncGenerator<{ content: string }> {
+  yield {
+    content: JSON.stringify({
+      message: "Hello from Enki",
+      sources_received: sources,
+    }),
+  };
 }

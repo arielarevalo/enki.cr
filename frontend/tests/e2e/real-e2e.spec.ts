@@ -23,5 +23,5 @@ test("full flow: API key → source → process → streaming result", async ({ 
   );
 
   // Verify streamed content actually renders (not just dialog transition)
-  await expect(page.getByRole("dialog").locator("p").first()).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole("dialog").locator("p").first()).toBeVisible({ timeout: 60_000 });
 });

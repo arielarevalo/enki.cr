@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { setApiKey } from "../api/adapter";
+import { setApiKey, validateApiKey } from "../api/adapter";
 
 interface Props {
   onValid: () => void;
@@ -8,16 +8,28 @@ interface Props {
 export function ApiKeyForm({ onValid }: Props) {
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmed = value.trim();
-    if (trimmed) {
-      setError("");
+    if (!trimmed) {
+      setError("API key is required");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+    try {
+      const result = await validateApiKey(trimmed);
+      if (!result.valid) {
+        setError(result.error ?? "Invalid API key");
+        return;
+      }
       setApiKey(trimmed);
       onValid();
-    } else {
-      setError("API key is required");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -35,9 +47,10 @@ export function ApiKeyForm({ onValid }: Props) {
           onChange={(e) => setValue(e.target.value)}
           placeholder="Enter your API key"
           autoFocus
+          disabled={loading}
         />
-        <button type="submit" className="modal__btn">
-          Go
+        <button type="submit" className="modal__btn" disabled={loading}>
+          {loading ? "..." : "Go"}
         </button>
       </div>
       {error && <p className="modal__error">{error}</p>}

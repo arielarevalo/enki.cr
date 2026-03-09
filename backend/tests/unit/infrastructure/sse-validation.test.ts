@@ -41,7 +41,14 @@ async function pipeChunks(
 
 function validEvent(
   eventType: string = "response.output_text.delta",
-  data: Record<string, unknown> = { type: "response.output_text.delta", delta: "hello" },
+  data: Record<string, unknown> = {
+    type: "response.output_text.delta",
+    sequence_number: 0,
+    item_id: "msg_1",
+    output_index: 0,
+    content_index: 0,
+    delta: "hello",
+  },
 ): string {
   return `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
 }
@@ -58,7 +65,7 @@ describe("createSseValidationStream", () => {
 
   it("emits error when event: line is missing", async () => {
     const stream = createSseValidationStream();
-    const input = `data: ${JSON.stringify({ type: "response.created" })}\n\n`;
+    const input = `data: ${JSON.stringify({ type: "response.created", sequence_number: 0 })}\n\n`;
 
     const output = await pipeChunks(stream, [input]);
 
@@ -87,7 +94,22 @@ describe("createSseValidationStream", () => {
 
   it("emits error on unknown event type", async () => {
     const stream = createSseValidationStream();
-    const input = `event: response.unknown\ndata: ${JSON.stringify({ type: "response.unknown" })}\n\n`;
+    const input = `event: response.unknown\ndata: ${JSON.stringify({ type: "response.unknown", sequence_number: 0 })}\n\n`;
+
+    const output = await pipeChunks(stream, [input]);
+
+    expect(output).toContain("agent_error");
+  });
+
+  it("emits error when sequence_number is missing", async () => {
+    const stream = createSseValidationStream();
+    const input = `event: response.output_text.delta\ndata: ${JSON.stringify({
+      type: "response.output_text.delta",
+      item_id: "msg_1",
+      output_index: 0,
+      content_index: 0,
+      delta: "hello",
+    })}\n\n`;
 
     const output = await pipeChunks(stream, [input]);
 
@@ -109,14 +131,60 @@ describe("createSseValidationStream", () => {
   it("passes full event sequence through", async () => {
     const stream = createSseValidationStream();
     const events = [
-      validEvent("response.created", { type: "response.created", response: { id: "resp_1", object: "response", created_at: 1700000000, status: "in_progress", output: [] } }),
-      validEvent("response.output_item.added", { type: "response.output_item.added", item: { id: "msg_1", type: "message" } }),
-      validEvent("response.content_part.added", { type: "response.content_part.added", part: { type: "output_text", text: "" } }),
-      validEvent("response.output_text.delta", { type: "response.output_text.delta", delta: "Hello" }),
-      validEvent("response.output_text.done", { type: "response.output_text.done", text: "Hello" }),
-      validEvent("response.content_part.done", { type: "response.content_part.done", part: { type: "output_text", text: "Hello" } }),
-      validEvent("response.output_item.done", { type: "response.output_item.done", item: { id: "msg_1", type: "message" } }),
-      validEvent("response.completed", { type: "response.completed", response: { id: "resp_1", object: "response", created_at: 1700000000, status: "completed", output: [] } }),
+      validEvent("response.created", {
+        type: "response.created",
+        sequence_number: 0,
+        response: { id: "resp_1", object: "response", created_at: 1700000000, status: "in_progress", model: "enki-agent-v1", output: [], usage: null },
+      }),
+      validEvent("response.output_item.added", {
+        type: "response.output_item.added",
+        sequence_number: 1,
+        output_index: 0,
+        item: { type: "message", id: "msg_1", status: "in_progress", role: "assistant", content: [] },
+      }),
+      validEvent("response.content_part.added", {
+        type: "response.content_part.added",
+        sequence_number: 2,
+        item_id: "msg_1",
+        output_index: 0,
+        content_index: 0,
+        part: { type: "output_text", text: "", annotations: [] },
+      }),
+      validEvent("response.output_text.delta", {
+        type: "response.output_text.delta",
+        sequence_number: 3,
+        item_id: "msg_1",
+        output_index: 0,
+        content_index: 0,
+        delta: "Hello",
+      }),
+      validEvent("response.output_text.done", {
+        type: "response.output_text.done",
+        sequence_number: 4,
+        item_id: "msg_1",
+        output_index: 0,
+        content_index: 0,
+        text: "Hello",
+      }),
+      validEvent("response.content_part.done", {
+        type: "response.content_part.done",
+        sequence_number: 5,
+        item_id: "msg_1",
+        output_index: 0,
+        content_index: 0,
+        part: { type: "output_text", text: "Hello", annotations: [] },
+      }),
+      validEvent("response.output_item.done", {
+        type: "response.output_item.done",
+        sequence_number: 6,
+        output_index: 0,
+        item: { type: "message", id: "msg_1", status: "completed", role: "assistant", content: [{ type: "output_text", text: "Hello", annotations: [] }] },
+      }),
+      validEvent("response.completed", {
+        type: "response.completed",
+        sequence_number: 7,
+        response: { id: "resp_1", object: "response", created_at: 1700000000, status: "completed", model: "enki-agent-v1", output: [{ type: "message", id: "msg_1", status: "completed", role: "assistant", content: [{ type: "output_text", text: "Hello", annotations: [] }] }], usage: null },
+      }),
     ];
     const input = events.join("");
 

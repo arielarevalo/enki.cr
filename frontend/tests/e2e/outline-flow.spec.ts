@@ -16,53 +16,72 @@ test("happy path: API key → source → process → result", async ({ page }) =
   const msgId = "msg_test";
   const fullText = "# Analysis\nResults here.";
 
+  // Mock the auth check endpoint
+  await page.route("**/api/auth/check", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ valid: true }),
+    });
+  });
+
   // Mock the API endpoint with real Responses API SSE format
   await page.route("**/api/outline/process", async (route) => {
     const body = [
       sseEvent("response.created", {
         type: "response.created",
-        response: { id: respId, object: "response", created_at: Date.now(), status: "in_progress", output: [] },
+        sequence_number: 0,
+        response: { id: respId, object: "response", created_at: Date.now(), status: "in_progress", model: "enki-agent-v1", output: [], usage: null },
       }),
       sseEvent("response.output_item.added", {
         type: "response.output_item.added",
+        sequence_number: 1,
         output_index: 0,
         item: { type: "message", id: msgId, status: "in_progress", role: "assistant", content: [] },
       }),
       sseEvent("response.content_part.added", {
         type: "response.content_part.added",
+        sequence_number: 2,
         item_id: msgId, output_index: 0, content_index: 0,
         part: { type: "output_text", text: "", annotations: [] },
       }),
       sseEvent("response.output_text.delta", {
         type: "response.output_text.delta",
+        sequence_number: 3,
         item_id: msgId, output_index: 0, content_index: 0,
         delta: "# Analysis\n",
       }),
       sseEvent("response.output_text.delta", {
         type: "response.output_text.delta",
+        sequence_number: 4,
         item_id: msgId, output_index: 0, content_index: 0,
         delta: "Results here.",
       }),
       sseEvent("response.output_text.done", {
         type: "response.output_text.done",
+        sequence_number: 5,
         item_id: msgId, output_index: 0, content_index: 0,
         text: fullText,
       }),
       sseEvent("response.content_part.done", {
         type: "response.content_part.done",
+        sequence_number: 6,
         item_id: msgId, output_index: 0, content_index: 0,
         part: { type: "output_text", text: fullText, annotations: [] },
       }),
       sseEvent("response.output_item.done", {
         type: "response.output_item.done",
+        sequence_number: 7,
         output_index: 0,
         item: { type: "message", id: msgId, status: "completed", role: "assistant", content: [{ type: "output_text", text: fullText, annotations: [] }] },
       }),
       sseEvent("response.completed", {
         type: "response.completed",
+        sequence_number: 8,
         response: {
-          id: respId, object: "response", created_at: Date.now(), status: "completed",
+          id: respId, object: "response", created_at: Date.now(), status: "completed", model: "enki-agent-v1",
           output: [{ type: "message", id: msgId, status: "completed", role: "assistant", content: [{ type: "output_text", text: fullText, annotations: [] }] }],
+          usage: null,
         },
       }),
     ].join("");
@@ -84,7 +103,7 @@ test("happy path: API key → source → process → result", async ({ page }) =
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
   await page.getByRole("button", { name: "Process" }).click();
 
-  // Should show streamed content
+  // After streaming completes, should show the full result as rendered markdown
   await expect(page.getByText("Results here.")).toBeVisible({ timeout: 10000 });
 });
 
@@ -94,7 +113,35 @@ test("empty API key shows error", async ({ page }) => {
   await expect(page.getByText("API key is required")).toBeVisible();
 });
 
+test("invalid API key shows error on form", async ({ page }) => {
+  await page.route("**/api/auth/check", async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { message: "Invalid API key" } }),
+    });
+  });
+
+  await page.goto("/");
+
+  await page.getByPlaceholder("Enter your API key").fill("bad-key");
+  await page.getByRole("button", { name: "Go" }).click();
+
+  // Error should appear on the API key form itself
+  await expect(page.getByText("Invalid API key")).toBeVisible({ timeout: 5000 });
+  // Modal should still be in API key state — input should still be visible
+  await expect(page.getByPlaceholder("Enter your API key")).toBeVisible();
+});
+
 test("process button disabled with no valid sources", async ({ page }) => {
+  await page.route("**/api/auth/check", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ valid: true }),
+    });
+  });
+
   await page.goto("/");
 
   // Enter API key first
@@ -106,6 +153,14 @@ test("process button disabled with no valid sources", async ({ page }) => {
 });
 
 test("add source button adds an input", async ({ page }) => {
+  await page.route("**/api/auth/check", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ valid: true }),
+    });
+  });
+
   await page.goto("/");
 
   await page.getByPlaceholder("Enter your API key").fill("test-key");
@@ -119,6 +174,15 @@ test("add source button adds an input", async ({ page }) => {
 });
 
 test("API error (401) shows error text", async ({ page }) => {
+  // Auth check passes
+  await page.route("**/api/auth/check", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ valid: true }),
+    });
+  });
+
   await page.route("**/api/outline/process", async (route) => {
     await route.fulfill({
       status: 401,
@@ -139,6 +203,14 @@ test("API error (401) shows error text", async ({ page }) => {
 });
 
 test("network error shows failure message", async ({ page }) => {
+  await page.route("**/api/auth/check", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ valid: true }),
+    });
+  });
+
   await page.route("**/api/outline/process", async (route) => {
     await route.abort("connectionrefused");
   });

@@ -5,6 +5,7 @@ import { ApiKeyForm } from "../../src/components/ApiKeyForm";
 
 vi.mock("../../src/api/adapter", () => ({
   setApiKey: vi.fn(),
+  validateApiKey: vi.fn().mockResolvedValue({ valid: true }),
 }));
 
 import { setApiKey } from "../../src/api/adapter";

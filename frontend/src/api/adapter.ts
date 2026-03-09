@@ -18,6 +18,29 @@ export function normalizeUrl(url: string): string {
   return url;
 }
 
+export async function validateApiKey(
+  key: string,
+): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/check`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (res.ok) return { valid: true };
+    let message = "Invalid API key";
+    try {
+      const body = await res.json();
+      if (body?.error?.message) message = body.error.message;
+      else if (body?.error) message = body.error;
+    } catch {
+      // use default
+    }
+    return { valid: false, error: message };
+  } catch {
+    return { valid: false, error: "Failed to connect to server" };
+  }
+}
+
 export const enkiAdapter: ChatModelAdapter = {
   async *run({ abortSignal }) {
     const sources = pendingSources.map(normalizeUrl);
@@ -59,7 +82,7 @@ export const enkiAdapter: ChatModelAdapter = {
 
     const decoder = new TextDecoder();
     let buffer = "";
-    let accumulated = "";
+    let accumulatedText = "";
 
     for (;;) {
       const { done, value } = await reader.read();
@@ -82,24 +105,23 @@ export const enkiAdapter: ChatModelAdapter = {
 
             // Detect inline SSE errors from validate-sse.ts
             if (parsed.error?.message) {
-              accumulated += `\n\nError: ${parsed.error.message}`;
-              yield { content: [{ type: "text" as const, text: accumulated }] };
+              accumulatedText += `\n\nError: ${parsed.error.message}`;
+              yield { content: [{ type: "text" as const, text: accumulatedText }] };
               return;
             }
 
             // Responses API: stream text deltas
             if (parsed.type === "response.output_text.delta" && parsed.delta) {
-              accumulated += parsed.delta;
-              yield { content: [{ type: "text" as const, text: accumulated }] };
+              accumulatedText += parsed.delta;
+              yield { content: [{ type: "text" as const, text: accumulatedText }] };
             }
 
             // Responses API: completed — sync final text
             if (parsed.type === "response.completed") {
               const finalText =
                 parsed.response?.output?.[0]?.content?.[0]?.text;
-              if (finalText && finalText !== accumulated) {
-                accumulated = finalText;
-                yield { content: [{ type: "text" as const, text: accumulated }] };
+              if (finalText && finalText !== accumulatedText) {
+                yield { content: [{ type: "text" as const, text: finalText }] };
               }
             }
           } catch {
@@ -110,7 +132,7 @@ export const enkiAdapter: ChatModelAdapter = {
     }
 
     // If stream ended without any content, yield empty state
-    if (!accumulated) {
+    if (!accumulatedText) {
       return;
     }
   },

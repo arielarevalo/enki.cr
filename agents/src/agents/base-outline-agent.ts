@@ -4,8 +4,8 @@ import { AgentLogger, type Logger } from "../infrastructure/logger.js";
 import { handleHealthRequest } from "../infrastructure/health.js";
 import { parseAndValidateRequest } from "../infrastructure/request-handler.js";
 import {
-  createMockResponseStream,
   createLangGraphSseStream,
+  staticContent,
 } from "../sse/stream-adapter.js";
 import { createLLM } from "../llm/openrouter.js";
 import { AgentSqlCheckpointSaver } from "../llm/checkpoint-saver.js";
@@ -99,8 +99,8 @@ export abstract class BaseOutlineAgent extends Agent<Env, AgentState> {
     const apiKey = this.env.OPENROUTER_API_KEY;
 
     if (!apiKey || !this.checkpointer) {
-      logger.warn("LLM not configured, using mock response");
-      return createMockResponseStream(sources);
+      logger.warn("LLM not configured, using static response");
+      return createLangGraphSseStream(staticContent(sources), logger);
     }
 
     try {
@@ -121,15 +121,12 @@ export abstract class BaseOutlineAgent extends Agent<Env, AgentState> {
         },
       );
 
-      return createLangGraphSseStream(
-        graphStream as AsyncIterable<{ content?: string }>,
-        logger,
-      );
+      return createLangGraphSseStream(graphStream, logger);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to start graph";
       logger.error("Graph initialization failed", { error: message });
-      return createMockResponseStream(sources);
+      return createLangGraphSseStream(staticContent(sources), logger);
     }
   }
 }

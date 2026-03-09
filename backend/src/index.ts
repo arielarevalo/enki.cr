@@ -5,13 +5,17 @@ import { CloudflareAgentProvider } from "./agents/cloudflare-agent-provider.js";
 import { createApp } from "./app.js";
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
     const app = createApp({
       logger: new CfLogger(),
       keyRepository: new D1KeyRepository(env.DB),
       settingsRepository: new D1SettingsRepository(env.DB),
       agentProvider: new CloudflareAgentProvider(env.AGENTS_BASE_URL),
     });
-    return app.fetch(request);
+    return app.fetch(request, env, ctx);
   },
 };

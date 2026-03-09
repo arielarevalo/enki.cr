@@ -24,6 +24,7 @@ vi.mock("@assistant-ui/react", () => {
 vi.mock("../../src/api/adapter", () => ({
   setApiKey: vi.fn(),
   setSources: vi.fn(),
+  validateApiKey: vi.fn().mockResolvedValue({ valid: true }),
 }));
 
 import { setSources } from "../../src/api/adapter";

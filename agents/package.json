@@ -17,7 +17,8 @@
     "@langchain/langgraph": "^1.2.1",
     "@langchain/langgraph-checkpoint": "^1.0.0",
     "@langchain/openai": "^1.2.12",
-    "agents": "^0.7"
+    "agents": "^0.7",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.12.20",

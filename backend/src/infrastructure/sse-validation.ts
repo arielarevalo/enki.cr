@@ -1,13 +1,4 @@
-const KNOWN_EVENT_TYPES = new Set([
-  "response.created",
-  "response.output_item.added",
-  "response.content_part.added",
-  "response.output_text.delta",
-  "response.output_text.done",
-  "response.content_part.done",
-  "response.output_item.done",
-  "response.completed",
-]);
+import { SseEventSchema } from "./sse-schema.js";
 
 export function createSseValidationStream(): TransformStream<
   Uint8Array,
@@ -58,13 +49,8 @@ export function createSseValidationStream(): TransformStream<
           return;
         }
 
-        if (typeof parsed !== "object" || parsed === null) {
-          emitError(controller, encoder);
-          return;
-        }
-
-        const data = parsed as Record<string, unknown>;
-        if (typeof data.type !== "string" || !KNOWN_EVENT_TYPES.has(data.type)) {
+        const result = SseEventSchema.safeParse(parsed);
+        if (!result.success) {
           emitError(controller, encoder);
           return;
         }

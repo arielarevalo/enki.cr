@@ -64,16 +64,33 @@ export function createMockLogger(): Logger {
 
 export function createValidSseStream(): ReadableStream {
   const encoder = new TextEncoder();
+  const msgId = "msg_1";
+  const fullText = "Hello";
   return new ReadableStream({
     start(controller) {
       controller.enqueue(encoder.encode(
-        `event: response.created\ndata: ${JSON.stringify({ type: "response.created", response: { id: "resp_1", object: "response", created_at: 1700000000, status: "in_progress", output: [] } })}\n\n`
+        `event: response.created\ndata: ${JSON.stringify({ type: "response.created", sequence_number: 0, response: { id: "resp_1", object: "response", created_at: 1700000000, status: "in_progress", model: "enki-agent-v1", output: [], usage: null } })}\n\n`
       ));
       controller.enqueue(encoder.encode(
-        `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", item_id: "msg_1", output_index: 0, content_index: 0, delta: "Hello" })}\n\n`
+        `event: response.output_item.added\ndata: ${JSON.stringify({ type: "response.output_item.added", sequence_number: 1, output_index: 0, item: { type: "message", id: msgId, status: "in_progress", role: "assistant", content: [] } })}\n\n`
       ));
       controller.enqueue(encoder.encode(
-        `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", response: { id: "resp_1", object: "response", created_at: 1700000000, status: "completed", output: [] } })}\n\n`
+        `event: response.content_part.added\ndata: ${JSON.stringify({ type: "response.content_part.added", sequence_number: 2, item_id: msgId, output_index: 0, content_index: 0, part: { type: "output_text", text: "", annotations: [] } })}\n\n`
+      ));
+      controller.enqueue(encoder.encode(
+        `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", sequence_number: 3, item_id: msgId, output_index: 0, content_index: 0, delta: fullText })}\n\n`
+      ));
+      controller.enqueue(encoder.encode(
+        `event: response.output_text.done\ndata: ${JSON.stringify({ type: "response.output_text.done", sequence_number: 4, item_id: msgId, output_index: 0, content_index: 0, text: fullText })}\n\n`
+      ));
+      controller.enqueue(encoder.encode(
+        `event: response.content_part.done\ndata: ${JSON.stringify({ type: "response.content_part.done", sequence_number: 5, item_id: msgId, output_index: 0, content_index: 0, part: { type: "output_text", text: fullText, annotations: [] } })}\n\n`
+      ));
+      controller.enqueue(encoder.encode(
+        `event: response.output_item.done\ndata: ${JSON.stringify({ type: "response.output_item.done", sequence_number: 6, output_index: 0, item: { type: "message", id: msgId, status: "completed", role: "assistant", content: [{ type: "output_text", text: fullText, annotations: [] }] } })}\n\n`
+      ));
+      controller.enqueue(encoder.encode(
+        `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", sequence_number: 7, response: { id: "resp_1", object: "response", created_at: 1700000000, status: "completed", model: "enki-agent-v1", output: [{ type: "message", id: msgId, status: "completed", role: "assistant", content: [{ type: "output_text", text: fullText, annotations: [] }] }], usage: null } })}\n\n`
       ));
       controller.close();
     },

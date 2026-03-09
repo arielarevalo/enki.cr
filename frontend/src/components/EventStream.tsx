@@ -14,13 +14,12 @@ export function EventStream({ expanded, onToggleExpand }: EventStreamProps) {
   const thread = useThread();
 
   if (!thread.isRunning) {
-    // Extract the last text part from the last assistant message
     const lastMessage = [...thread.messages].reverse().find((m) => m.role === "assistant");
     const textParts = lastMessage?.content
       .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text");
-    const lastTextPart = textParts && textParts[textParts.length - 1];
+    const fullText = textParts?.map((p) => p.text).join("") ?? "";
 
-    if (lastTextPart) {
+    if (fullText) {
       return (
         <div className="event-stream">
           <div className="result__header">
@@ -35,7 +34,7 @@ export function EventStream({ expanded, onToggleExpand }: EventStreamProps) {
           <div className="event-stream__viewport">
             <div className="result__body">
               <div className="result__markdown">
-                <ReactMarkdown>{lastTextPart.text}</ReactMarkdown>
+                <ReactMarkdown>{fullText}</ReactMarkdown>
               </div>
             </div>
           </div>
@@ -46,6 +45,9 @@ export function EventStream({ expanded, onToggleExpand }: EventStreamProps) {
 
   return (
     <div className="event-stream">
+      <div className="event-stream__status">
+        <div className="event-stream__spinner" />
+      </div>
       <ThreadPrimitive.Root>
         <ThreadPrimitive.Viewport autoScroll className="event-stream__viewport">
           <ThreadPrimitive.Messages

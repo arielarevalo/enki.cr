@@ -20,20 +20,25 @@ function sseChunk(data: string): Uint8Array {
   return new TextEncoder().encode(`data: ${data}\n\n`);
 }
 
-function deltaEvent(text: string): Uint8Array {
+function deltaEvent(text: string, seq: number = 0): Uint8Array {
   return new TextEncoder().encode(
-    `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", delta: text })}\n\n`,
+    `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", sequence_number: seq, item_id: "msg_1", output_index: 0, content_index: 0, delta: text })}\n\n`,
   );
 }
 
-function completedEvent(fullText: string): Uint8Array {
+function completedEvent(fullText: string, seq: number = 0): Uint8Array {
   return new TextEncoder().encode(
     `event: response.completed\ndata: ${JSON.stringify({
       type: "response.completed",
+      sequence_number: seq,
       response: {
         id: "resp_test",
+        object: "response",
+        created_at: 1700000000,
         status: "completed",
-        output: [{ type: "message", content: [{ type: "output_text", text: fullText }] }],
+        model: "enki-agent-v1",
+        output: [{ type: "message", id: "msg_1", status: "completed", role: "assistant", content: [{ type: "output_text", text: fullText, annotations: [] }] }],
+        usage: null,
       },
     })}\n\n`,
   );
@@ -63,12 +68,19 @@ function mockFetchResponse(body: ReadableStream<Uint8Array>, status = 200): Resp
   } as unknown as Response;
 }
 
-async function collectResults(adapter: typeof enkiAdapter): Promise<string[]> {
-  const results: string[] = [];
+interface TextPart {
+  type: "text";
+  text: string;
+}
+
+async function collectResults(adapter: typeof enkiAdapter): Promise<TextPart[][]> {
+  const results: TextPart[][] = [];
   const gen = adapter.run({ messages: [], abortSignal: new AbortController().signal });
   for await (const msg of gen) {
-    const text = msg.content?.[0];
-    if (text && "text" in text) results.push(text.text);
+    const parts = msg.content?.filter(
+      (p): p is TextPart => p.type === "text",
+    ) ?? [];
+    if (parts.length > 0) results.push(parts);
   }
   return results;
 }
@@ -113,18 +125,24 @@ describe("enkiAdapter.run()", () => {
     });
   });
 
-  it("yields accumulated text from multiple SSE delta events", async () => {
+  it("accumulates deltas into a single growing text part", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      mockFetchResponse(mockStream(deltaEvent("Hello "), deltaEvent("World")))
+      mockFetchResponse(mockStream(deltaEvent("Hello ", 3), deltaEvent("World", 4)))
     ));
 
     const results = await collectResults(enkiAdapter);
-    expect(results).toContain("Hello ");
-    expect(results).toContain("Hello World");
+
+    // First yield: accumulated so far
+    expect(results[0]).toHaveLength(1);
+    expect(results[0][0].text).toBe("Hello ");
+
+    // Second yield: single part with concatenated text
+    expect(results[1]).toHaveLength(1);
+    expect(results[1][0].text).toBe("Hello World");
   });
 
   it("handles partial buffer splits across reads", async () => {
-    const full = `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", delta: "split" })}\n\n`;
+    const full = `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", sequence_number: 0, item_id: "msg_1", output_index: 0, content_index: 0, delta: "split" })}\n\n`;
     const mid = Math.floor(full.length / 2);
     const part1 = new TextEncoder().encode(full.slice(0, mid));
     const part2 = new TextEncoder().encode(full.slice(mid));
@@ -134,33 +152,37 @@ describe("enkiAdapter.run()", () => {
     ));
 
     const results = await collectResults(enkiAdapter);
-    expect(results).toContain("split");
+    expect(results[0][0].text).toBe("split");
   });
 
   it("syncs final text from response.completed event", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      mockFetchResponse(mockStream(deltaEvent("partial"), completedEvent("full text")))
+      mockFetchResponse(mockStream(deltaEvent("partial", 3), completedEvent("full text", 7)))
     ));
 
     const results = await collectResults(enkiAdapter);
-    expect(results.at(-1)).toBe("full text");
+    // Last yield should be the completed final text as a single part
+    const last = results.at(-1)!;
+    expect(last).toHaveLength(1);
+    expect(last[0].text).toBe("full text");
   });
 
   it("skips response.completed when text matches accumulated", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      mockFetchResponse(mockStream(deltaEvent("exact"), completedEvent("exact")))
+      mockFetchResponse(mockStream(deltaEvent("exact", 3), completedEvent("exact", 7)))
     ));
 
     const results = await collectResults(enkiAdapter);
     // Should only yield once from the delta, not again from completed
-    expect(results).toEqual(["exact"]);
+    expect(results).toHaveLength(1);
+    expect(results[0][0].text).toBe("exact");
   });
 
   it("yields error on fetch failure", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
 
     const results = await collectResults(enkiAdapter);
-    expect(results[0]).toBe("Error: Failed to connect to server");
+    expect(results[0][0].text).toBe("Error: Failed to connect to server");
   });
 
   it("yields error on non-OK response with JSON error body", async () => {
@@ -176,7 +198,7 @@ describe("enkiAdapter.run()", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
 
     const results = await collectResults(enkiAdapter);
-    expect(results[0]).toBe("Error: Invalid API key");
+    expect(results[0][0].text).toBe("Error: Invalid API key");
   });
 
   it("yields error on non-OK response without parseable body", async () => {
@@ -192,17 +214,17 @@ describe("enkiAdapter.run()", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
 
     const results = await collectResults(enkiAdapter);
-    expect(results[0]).toBe("Error: 500 Internal Server Error");
+    expect(results[0][0].text).toBe("Error: 500 Internal Server Error");
   });
 
   it("handles [DONE] terminal marker", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      mockFetchResponse(mockStream(deltaEvent("text"), sseChunk("[DONE]")))
+      mockFetchResponse(mockStream(deltaEvent("text", 3), sseChunk("[DONE]")))
     ));
 
     const results = await collectResults(enkiAdapter);
-    expect(results).toContain("text");
-    expect(results.every((r) => !r.includes("[DONE]"))).toBe(true);
+    expect(results[0][0].text).toBe("text");
+    expect(results.every((r) => r.every((p) => !p.text.includes("[DONE]")))).toBe(true);
   });
 
   it("detects inline SSE error objects", async () => {
@@ -213,16 +235,16 @@ describe("enkiAdapter.run()", () => {
     ));
 
     const results = await collectResults(enkiAdapter);
-    expect(results.at(-1)).toContain("Rate limit exceeded");
+    expect(results.at(-1)!.at(-1)!.text).toContain("Rate limit exceeded");
   });
 
   it("skips unparseable JSON lines", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      mockFetchResponse(mockStream(sseChunk("not-json"), deltaEvent("ok")))
+      mockFetchResponse(mockStream(sseChunk("not-json"), deltaEvent("ok", 3)))
     ));
 
     const results = await collectResults(enkiAdapter);
-    expect(results).toContain("ok");
+    expect(results[0][0].text).toBe("ok");
   });
 
   it("yields error when response body is null", async () => {
@@ -238,6 +260,6 @@ describe("enkiAdapter.run()", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
 
     const results = await collectResults(enkiAdapter);
-    expect(results[0]).toBe("Error: No response stream");
+    expect(results[0][0].text).toBe("Error: No response stream");
   });
 });

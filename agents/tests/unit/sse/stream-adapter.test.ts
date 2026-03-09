@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   createLangGraphSseStream,
-  createMockResponseStream,
+  staticContent,
 } from "../../../src/sse/stream-adapter.js";
 import type { Logger } from "../../../src/infrastructure/logger.js";
 
@@ -68,6 +68,55 @@ describe("createLangGraphSseStream", () => {
     ]);
   });
 
+  it("handles [MessageChunk, metadata] tuples from streamMode messages", async () => {
+    async function* mockStream() {
+      yield [{ content: "Hello " }, { langgraph_node: "research" }];
+      yield [{ content: "world" }, { langgraph_node: "research" }];
+    }
+
+    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const raw = await readStream(stream);
+    const events = parseEvents(raw);
+
+    const deltas = events.filter(
+      (e) => e.event === "response.output_text.delta",
+    );
+    expect(deltas).toHaveLength(2);
+    expect((deltas[0].data as { delta: string }).delta).toBe("Hello ");
+    expect((deltas[1].data as { delta: string }).delta).toBe("world");
+  });
+
+  it("skips tuples with non-string content", async () => {
+    async function* mockStream() {
+      yield [{ content: [{ type: "tool_use" }] }, { langgraph_node: "n" }];
+      yield [{ content: "text" }, { langgraph_node: "n" }];
+    }
+
+    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const raw = await readStream(stream);
+    const events = parseEvents(raw);
+
+    const deltas = events.filter(
+      (e) => e.event === "response.output_text.delta",
+    );
+    expect(deltas).toHaveLength(1);
+    expect((deltas[0].data as { delta: string }).delta).toBe("text");
+  });
+
+  it("assigns incrementing sequence_number to each event", async () => {
+    async function* mockStream() {
+      yield { content: "text" };
+    }
+
+    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const raw = await readStream(stream);
+    const events = parseEvents(raw);
+
+    events.forEach((e, i) => {
+      expect((e.data as { sequence_number: number }).sequence_number).toBe(i);
+    });
+  });
+
   it("accumulates full text across deltas", async () => {
     async function* mockStream() {
       yield { content: "part1" };
@@ -120,9 +169,9 @@ describe("createLangGraphSseStream", () => {
   });
 });
 
-describe("createMockResponseStream", () => {
-  it("emits all 8 SSE event types in order", async () => {
-    const stream = createMockResponseStream(["source1"]);
+describe("staticContent", () => {
+  it("emits all 8 SSE event types when piped through createLangGraphSseStream", async () => {
+    const stream = createLangGraphSseStream(staticContent(["source1"]), createMockLogger());
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 
@@ -138,8 +187,8 @@ describe("createMockResponseStream", () => {
     ]);
   });
 
-  it("includes sources in mock response text", async () => {
-    const stream = createMockResponseStream(["src1", "src2"]);
+  it("includes sources in static response text", async () => {
+    const stream = createLangGraphSseStream(staticContent(["src1", "src2"]), createMockLogger());
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 

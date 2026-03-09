@@ -2,6 +2,10 @@
   "name": "enki",
   "private": true,
   "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "dev:agents": "cd agents && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
     "test:e2e:backend": "cd agents && npm run test:e2e && cd ../backend && npm run test:e2e:local",
     "test:e2e": "npm run test:e2e:backend && cd frontend && npm run test:e2e:local",
     "test:e2e:prod": "cd agents && npm run test:e2e:prod && cd ../backend && npm run test:e2e && cd ../frontend && E2E_BASE_URL=https://enki.cr E2E_BACKEND_URL=https://api.enki.cr npx playwright test --project=e2e"
