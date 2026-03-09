@@ -16,9 +16,12 @@ test("full flow: API key → source → process → streaming result", async ({ 
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
   await page.getByRole("button", { name: "Process" }).click();
 
-  // Should transition to streaming state
+  // Should transition to streaming state and render content
   await expect(page.getByRole("dialog")).toHaveAttribute(
     "aria-label",
     "Streaming analysis events",
   );
+
+  // Verify streamed content actually renders (not just dialog transition)
+  await expect(page.getByRole("dialog").locator("p").first()).toBeVisible({ timeout: 15000 });
 });

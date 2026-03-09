@@ -87,10 +87,20 @@ export const enkiAdapter: ChatModelAdapter = {
               return;
             }
 
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              accumulated += content;
+            // Responses API: stream text deltas
+            if (parsed.type === "response.output_text.delta" && parsed.delta) {
+              accumulated += parsed.delta;
               yield { content: [{ type: "text" as const, text: accumulated }] };
+            }
+
+            // Responses API: completed — sync final text
+            if (parsed.type === "response.completed") {
+              const finalText =
+                parsed.response?.output?.[0]?.content?.[0]?.text;
+              if (finalText && finalText !== accumulated) {
+                accumulated = finalText;
+                yield { content: [{ type: "text" as const, text: accumulated }] };
+              }
             }
           } catch {
             // skip unparseable lines
@@ -99,9 +109,9 @@ export const enkiAdapter: ChatModelAdapter = {
       }
     }
 
-    // Yield final state if we accumulated anything but didn't yield it yet
-    if (accumulated) {
-      yield { content: [{ type: "text" as const, text: accumulated }] };
+    // If stream ended without any content, yield empty state
+    if (!accumulated) {
+      return;
     }
   },
 };

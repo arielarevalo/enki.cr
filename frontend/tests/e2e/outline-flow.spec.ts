@@ -7,15 +7,66 @@ test.skip(
   "Skipped: outline-flow tests only run against localhost"
 );
 
-function ssePayload(content: string): string {
-  const obj = { choices: [{ delta: { content } }] };
-  return `data: ${JSON.stringify(obj)}\n\n`;
+function sseEvent(event: string, data: object): string {
+  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
 test("happy path: API key → source → process → result", async ({ page }) => {
-  // Mock the API endpoint
+  const respId = "resp_test";
+  const msgId = "msg_test";
+  const fullText = "# Analysis\nResults here.";
+
+  // Mock the API endpoint with real Responses API SSE format
   await page.route("**/api/outline/process", async (route) => {
-    const body = ssePayload("# Analysis\n") + ssePayload("Results here.") + "data: [DONE]\n\n";
+    const body = [
+      sseEvent("response.created", {
+        type: "response.created",
+        response: { id: respId, object: "response", created_at: Date.now(), status: "in_progress", output: [] },
+      }),
+      sseEvent("response.output_item.added", {
+        type: "response.output_item.added",
+        output_index: 0,
+        item: { type: "message", id: msgId, status: "in_progress", role: "assistant", content: [] },
+      }),
+      sseEvent("response.content_part.added", {
+        type: "response.content_part.added",
+        item_id: msgId, output_index: 0, content_index: 0,
+        part: { type: "output_text", text: "", annotations: [] },
+      }),
+      sseEvent("response.output_text.delta", {
+        type: "response.output_text.delta",
+        item_id: msgId, output_index: 0, content_index: 0,
+        delta: "# Analysis\n",
+      }),
+      sseEvent("response.output_text.delta", {
+        type: "response.output_text.delta",
+        item_id: msgId, output_index: 0, content_index: 0,
+        delta: "Results here.",
+      }),
+      sseEvent("response.output_text.done", {
+        type: "response.output_text.done",
+        item_id: msgId, output_index: 0, content_index: 0,
+        text: fullText,
+      }),
+      sseEvent("response.content_part.done", {
+        type: "response.content_part.done",
+        item_id: msgId, output_index: 0, content_index: 0,
+        part: { type: "output_text", text: fullText, annotations: [] },
+      }),
+      sseEvent("response.output_item.done", {
+        type: "response.output_item.done",
+        output_index: 0,
+        item: { type: "message", id: msgId, status: "completed", role: "assistant", content: [{ type: "output_text", text: fullText, annotations: [] }] },
+      }),
+      sseEvent("response.completed", {
+        type: "response.completed",
+        response: {
+          id: respId, object: "response", created_at: Date.now(), status: "completed",
+          output: [{ type: "message", id: msgId, status: "completed", role: "assistant", content: [{ type: "output_text", text: fullText, annotations: [] }] }],
+        },
+      }),
+    ].join("");
+
     await route.fulfill({
       status: 200,
       contentType: "text/event-stream",
@@ -33,8 +84,8 @@ test("happy path: API key → source → process → result", async ({ page }) =
   await page.getByPlaceholder("source-1.example.com").fill("example.com");
   await page.getByRole("button", { name: "Process" }).click();
 
-  // Should transition to streaming/result state
-  await expect(page.getByRole("dialog")).toHaveAttribute("aria-label", "Streaming analysis events");
+  // Should show streamed content
+  await expect(page.getByText("Results here.")).toBeVisible({ timeout: 10000 });
 });
 
 test("empty API key shows error", async ({ page }) => {

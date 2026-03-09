@@ -20,6 +20,25 @@ function sseChunk(data: string): Uint8Array {
   return new TextEncoder().encode(`data: ${data}\n\n`);
 }
 
+function deltaEvent(text: string): Uint8Array {
+  return new TextEncoder().encode(
+    `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", delta: text })}\n\n`,
+  );
+}
+
+function completedEvent(fullText: string): Uint8Array {
+  return new TextEncoder().encode(
+    `event: response.completed\ndata: ${JSON.stringify({
+      type: "response.completed",
+      response: {
+        id: "resp_test",
+        status: "completed",
+        output: [{ type: "message", content: [{ type: "output_text", text: fullText }] }],
+      },
+    })}\n\n`,
+  );
+}
+
 function mockStream(...chunks: Uint8Array[]): ReadableStream<Uint8Array> {
   let i = 0;
   return new ReadableStream({
@@ -94,12 +113,9 @@ describe("enkiAdapter.run()", () => {
     });
   });
 
-  it("yields accumulated text from multiple SSE chunks", async () => {
-    const chunk1 = JSON.stringify({ choices: [{ delta: { content: "Hello " } }] });
-    const chunk2 = JSON.stringify({ choices: [{ delta: { content: "World" } }] });
-
+  it("yields accumulated text from multiple SSE delta events", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      mockFetchResponse(mockStream(sseChunk(chunk1), sseChunk(chunk2)))
+      mockFetchResponse(mockStream(deltaEvent("Hello "), deltaEvent("World")))
     ));
 
     const results = await collectResults(enkiAdapter);
@@ -108,8 +124,7 @@ describe("enkiAdapter.run()", () => {
   });
 
   it("handles partial buffer splits across reads", async () => {
-    const data = JSON.stringify({ choices: [{ delta: { content: "split" } }] });
-    const full = `data: ${data}\n\n`;
+    const full = `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", delta: "split" })}\n\n`;
     const mid = Math.floor(full.length / 2);
     const part1 = new TextEncoder().encode(full.slice(0, mid));
     const part2 = new TextEncoder().encode(full.slice(mid));
@@ -120,6 +135,25 @@ describe("enkiAdapter.run()", () => {
 
     const results = await collectResults(enkiAdapter);
     expect(results).toContain("split");
+  });
+
+  it("syncs final text from response.completed event", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      mockFetchResponse(mockStream(deltaEvent("partial"), completedEvent("full text")))
+    ));
+
+    const results = await collectResults(enkiAdapter);
+    expect(results.at(-1)).toBe("full text");
+  });
+
+  it("skips response.completed when text matches accumulated", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      mockFetchResponse(mockStream(deltaEvent("exact"), completedEvent("exact")))
+    ));
+
+    const results = await collectResults(enkiAdapter);
+    // Should only yield once from the delta, not again from completed
+    expect(results).toEqual(["exact"]);
   });
 
   it("yields error on fetch failure", async () => {
@@ -162,15 +196,12 @@ describe("enkiAdapter.run()", () => {
   });
 
   it("handles [DONE] terminal marker", async () => {
-    const chunk = JSON.stringify({ choices: [{ delta: { content: "text" } }] });
-
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      mockFetchResponse(mockStream(sseChunk(chunk), sseChunk("[DONE]")))
+      mockFetchResponse(mockStream(deltaEvent("text"), sseChunk("[DONE]")))
     ));
 
     const results = await collectResults(enkiAdapter);
     expect(results).toContain("text");
-    // [DONE] should not cause errors
     expect(results.every((r) => !r.includes("[DONE]"))).toBe(true);
   });
 
@@ -186,10 +217,8 @@ describe("enkiAdapter.run()", () => {
   });
 
   it("skips unparseable JSON lines", async () => {
-    const validChunk = JSON.stringify({ choices: [{ delta: { content: "ok" } }] });
-
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      mockFetchResponse(mockStream(sseChunk("not-json"), sseChunk(validChunk)))
+      mockFetchResponse(mockStream(sseChunk("not-json"), deltaEvent("ok")))
     ));
 
     const results = await collectResults(enkiAdapter);
