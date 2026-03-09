@@ -48,9 +48,13 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
           workingDirectory: agents
-          secrets: |
-            OPENROUTER_API_KEY
+
+      - name: Set worker secrets
+        working-directory: agents
+        run: echo "$OPENROUTER_API_KEY" | npx wrangler secret put OPENROUTER_API_KEY
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   e2e:
