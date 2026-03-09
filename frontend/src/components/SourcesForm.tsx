@@ -4,6 +4,13 @@ interface Props {
   onProcess: (sources: string[]) => void;
 }
 
+function isValidSource(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  // Match domain.tld with optional path/query
+  return /^[^\s/]+\.[^\s/]+/.test(trimmed);
+}
+
 export function SourcesForm({ onProcess }: Props) {
   const [sources, setSources] = useState(["", "", ""]);
 
@@ -21,13 +28,13 @@ export function SourcesForm({ onProcess }: Props) {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const filled = sources.filter((s) => s.trim());
-    if (filled.length > 0) {
-      onProcess(filled);
+    const valid = sources.filter(isValidSource);
+    if (valid.length > 0) {
+      onProcess(valid.map((s) => s.trim()));
     }
   }
 
-  const hasSources = sources.some((s) => s.trim());
+  const hasValidSources = sources.some(isValidSource);
 
   return (
     <form className="sources-form" onSubmit={handleSubmit}>
@@ -37,10 +44,10 @@ export function SourcesForm({ onProcess }: Props) {
           <input
             key={i}
             className="modal__input"
-            type="url"
+            type="text"
             value={source}
             onChange={(e) => updateSource(i, e.target.value)}
-            placeholder={`https://source-${i + 1}.example.com`}
+            placeholder={`source-${i + 1}.example.com`}
             autoFocus={i === 0}
           />
         ))}
@@ -57,8 +64,8 @@ export function SourcesForm({ onProcess }: Props) {
         <button
           type="submit"
           className="modal__btn"
-          disabled={!hasSources}
-          style={{ width: "100%", opacity: hasSources ? 1 : 0.4 }}
+          disabled={!hasValidSources}
+          style={{ width: "100%", opacity: hasValidSources ? 1 : 0.4 }}
         >
           Process
         </button>

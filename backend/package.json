@@ -1,0 +1,14 @@
+{
+  "name": "enki-api",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "type-check": "npm run types && tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.8",
+    "wrangler": "^4"
+  }
+}

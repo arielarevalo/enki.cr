@@ -3,5 +3,15 @@
   "name": "enki-api",
   "main": "src/index.ts",
   "compatibility_date": "2025-01-01",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "enki-db",
+      "database_id": "" // Set after Terraform creates the D1 database
+    }
+  ],
+  "vars": {
+    "AGENTS_BASE_URL": "" // Set to enki-agents workers.dev URL after deployment
+  }
 }

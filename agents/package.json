@@ -1,0 +1,18 @@
+{
+  "name": "enki-agents",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "type-check": "npm run types && tsc"
+  },
+  "dependencies": {
+    "agents": "^0.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.8",
+    "wrangler": "^4"
+  }
+}

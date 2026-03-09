@@ -11,3 +11,11 @@ infra/plan.out
 # Frontend
 frontend/node_modules/
 frontend/dist/
+
+# Agents
+agents/node_modules/
+agents/.wrangler/
+
+# Backend
+backend/node_modules/
+backend/.wrangler/

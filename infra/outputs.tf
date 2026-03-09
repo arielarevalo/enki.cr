@@ -17,3 +17,8 @@ output "agents_worker_name" {
   description = "Agents Worker script name"
   value       = cloudflare_workers_script.agents.script_name
 }
+
+output "d1_database_id" {
+  description = "D1 database ID for enki-db"
+  value       = cloudflare_d1_database.main.id
+}

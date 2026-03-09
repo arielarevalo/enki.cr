@@ -1,16 +1,16 @@
 import { useCallback, useState } from "react";
 import { useModalState, type ModalState } from "../hooks/useModalState";
-import { useThreadRuntime } from "@assistant-ui/react";
+import { useThreadRuntime, useThread } from "@assistant-ui/react";
 import { ApiKeyForm } from "./ApiKeyForm";
 import { SourcesForm } from "./SourcesForm";
 import { ProcessingThrobber } from "./ProcessingThrobber";
 import { EventStream } from "./EventStream";
-import { FinalResult } from "./FinalResult";
 
 export function EnkiModal() {
   const [state, dispatch] = useModalState();
-  const [expanded, setExpanded] = useState(false);
   const threadRuntime = useThreadRuntime();
+  const thread = useThread();
+  const [expanded, setExpanded] = useState(false);
 
   const handleApiKeyValid = useCallback(() => {
     dispatch({ type: "API_KEY_VALID" });
@@ -39,20 +39,17 @@ export function EnkiModal() {
     [dispatch, threadRuntime]
   );
 
-  const handleStreamComplete = useCallback(() => {
-    dispatch({ type: "STREAMING_DONE" });
-  }, [dispatch]);
-
   const handleToggleExpand = useCallback(() => {
     setExpanded((prev) => !prev);
   }, []);
 
+  const canExpand = state === "streaming" && !thread.isRunning;
   const sizeClass = `modal--${state}`;
-  const expandedClass = expanded && state === "result" ? " modal--expanded" : "";
+  const expandedClass = canExpand && expanded ? " modal--expanded" : "";
 
   return (
     <>
-      {expanded && state === "result" && (
+      {canExpand && expanded && (
         <div className="modal-overlay" onClick={handleToggleExpand} />
       )}
       <div
@@ -61,7 +58,7 @@ export function EnkiModal() {
         aria-label={ariaLabelFor(state)}
       >
         <div className="modal__content">
-          <div className="modal__panel modal__panel--entering" key={state}>
+          <div className="modal__panel modal__panel--entering">
             {state === "apiKey" && (
               <ApiKeyForm onValid={handleApiKeyValid} />
             )}
@@ -70,10 +67,7 @@ export function EnkiModal() {
             )}
             {state === "processing" && <ProcessingThrobber />}
             {state === "streaming" && (
-              <EventStream onComplete={handleStreamComplete} />
-            )}
-            {state === "result" && (
-              <FinalResult
+              <EventStream
                 expanded={expanded}
                 onToggleExpand={handleToggleExpand}
               />
@@ -95,7 +89,5 @@ function ariaLabelFor(state: ModalState): string {
       return "Processing sources";
     case "streaming":
       return "Streaming analysis events";
-    case "result":
-      return "Analysis result";
   }
 }

@@ -48,7 +48,7 @@ a { color: inherit; text-decoration: none; }
 .container {
   max-width: 1200px;
   margin-inline: auto;
-  padding-inline: 2rem;
+  padding-inline: 1rem;
 }
 
 /* ─── Header ─── */
@@ -130,23 +130,21 @@ header {
 .hero > .container {
   position: relative;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 2rem;
   width: 100%;
 }
 
 .hero__text {
-  flex: 0 1 60%;
-  margin-left: 3rem;
+  padding-left: 0;
+  padding-right: 3rem;
+  max-width: 55vw;
 }
 
 .hero__modal {
-  flex: 0 1 40%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
 }
 
 .kicker {
@@ -164,7 +162,7 @@ h1 {
   line-height: 1.05;
   letter-spacing: -0.02em;
   margin-bottom: 1.5rem;
-  max-width: 14ch;
+  max-width: none;
 }
 
 .subtitle {
@@ -290,19 +288,21 @@ footer small {
 }
 
 /* ─── Responsive ─── */
-@media (max-width: 768px) {
-  .hero > .container {
-    flex-direction: column;
-  }
+@media (max-width: 1024px) {
   .hero__text {
-    flex: none;
-    margin-left: 0;
+    padding-left: 0;
     padding-bottom: 2rem;
+    max-width: none;
   }
   .hero__modal {
-    flex: none;
+    position: static;
+    transform: none;
     width: 100%;
+    display: flex;
+    justify-content: center;
   }
+}
+@media (max-width: 768px) {
   h1 { max-width: 100%; }
   .header .btn {
     padding: 0.4rem 1rem;

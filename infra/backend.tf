@@ -9,3 +9,8 @@ resource "cloudflare_workers_script" "backend" {
     ignore_changes = [content, bindings, compatibility_date, compatibility_flags]
   }
 }
+
+resource "cloudflare_d1_database" "main" {
+  account_id = var.account_id
+  name       = "enki-db"
+}
