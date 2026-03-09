@@ -11,10 +11,6 @@
       { "name": "OUTLINE_WORKFLOW_AGENT", "class_name": "OutlineWorkflowAgent" }
     ]
   },
-  // Type hint only — actual value injected via deploy workflow secrets
-  "vars": {
-    "OPENROUTER_API_KEY": ""
-  },
   "migrations": [
     {
       "tag": "v1",
