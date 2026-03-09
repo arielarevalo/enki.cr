@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { AgentSqlCheckpointSaver } from "../../../src/llm/checkpoint-saver.js";
+import { AgentSqlCheckpointSaver } from "../../../src/langchain/checkpoint-saver.js";
 import type { Checkpoint } from "@langchain/langgraph-checkpoint";
 import type { CheckpointMetadata } from "@langchain/langgraph-checkpoint";
 

@@ -9,7 +9,7 @@ import {
 } from "@langchain/langgraph-checkpoint";
 import type { CheckpointMetadata } from "@langchain/langgraph-checkpoint";
 
-type SqlTagFn = (
+export type SqlTagFn = (
   strings: TemplateStringsArray,
   ...values: unknown[]
 ) => unknown[];

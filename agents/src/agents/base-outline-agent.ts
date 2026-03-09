@@ -3,38 +3,27 @@ import type { AgentRequestBody, AgentState } from "../types.js";
 import { AgentLogger, type Logger } from "../infrastructure/logger.js";
 import { handleHealthRequest } from "../infrastructure/health.js";
 import { parseAndValidateRequest } from "../infrastructure/request-handler.js";
-import {
-  createLangGraphSseStream,
-  staticContent,
-} from "../sse/stream-adapter.js";
-import { createLLM } from "../llm/openrouter.js";
-import { AgentSqlCheckpointSaver } from "../llm/checkpoint-saver.js";
-import type { ChatOpenAI } from "@langchain/openai";
-
-export interface StreamableGraph {
-  stream(
-    input: Record<string, unknown>,
-    config: Record<string, unknown>,
-  ): Promise<AsyncIterable<unknown>>;
-}
+import { createSseStream } from "../sse/stream-adapter.js";
+import { LangChainAgent } from "../langchain/lang-chain-agent.js";
+import type { SqlTagFn } from "../langchain/checkpoint-saver.js";
 
 export abstract class BaseOutlineAgent extends Agent<Env, AgentState> {
-  private checkpointer: AgentSqlCheckpointSaver | undefined;
+  private langChainAgent?: LangChainAgent;
 
   abstract getAgentType(): string;
-  abstract createGraph(
-    llm: ChatOpenAI,
-    checkpointer: AgentSqlCheckpointSaver,
-  ): StreamableGraph;
+  abstract createLangChainAgent(
+    apiKey: string,
+    sql: SqlTagFn,
+  ): LangChainAgent;
 
   onStart(): void {
-    this.checkpointer = new AgentSqlCheckpointSaver(
-      this.sql.bind(this) as (
-        strings: TemplateStringsArray,
-        ...values: unknown[]
-      ) => unknown[],
-    );
-    void this.checkpointer.setup();
+    const apiKey = this.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENROUTER_API_KEY is required but not set");
+    }
+    const sql = this.sql.bind(this) as SqlTagFn;
+    this.langChainAgent = this.createLangChainAgent(apiKey, sql);
+    void this.langChainAgent.setup();
   }
 
   async onRequest(request: Request): Promise<Response> {
@@ -96,37 +85,7 @@ export abstract class BaseOutlineAgent extends Agent<Env, AgentState> {
     sources: string[],
     logger: Logger,
   ): Promise<ReadableStream> {
-    const apiKey = this.env.OPENROUTER_API_KEY;
-
-    if (!apiKey || !this.checkpointer) {
-      logger.warn("LLM not configured, using static response");
-      return createLangGraphSseStream(staticContent(sources), logger);
-    }
-
-    try {
-      const llm = createLLM(apiKey);
-      const graph = this.createGraph(llm, this.checkpointer);
-      const threadId = crypto.randomUUID();
-
-      logger.info("Starting graph execution", {
-        graphType: this.getAgentType(),
-        threadId,
-      });
-
-      const graphStream = await graph.stream(
-        { sources, messages: [] },
-        {
-          configurable: { thread_id: threadId },
-          streamMode: "messages",
-        },
-      );
-
-      return createLangGraphSseStream(graphStream, logger);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to start graph";
-      logger.error("Graph initialization failed", { error: message });
-      return createLangGraphSseStream(staticContent(sources), logger);
-    }
+    const stream = await this.langChainAgent!.process(sources);
+    return createSseStream(stream, logger);
   }
 }

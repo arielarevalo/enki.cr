@@ -30,7 +30,7 @@ function extractContent(item: unknown): string {
  * Creates an SSE response stream from a LangGraph message stream.
  * Transforms LangGraph stream events into OpenAI Responses API SSE format.
  */
-export function createLangGraphSseStream(
+export function createSseStream(
   graphStream: AsyncIterable<unknown>,
   logger: Logger,
 ): ReadableStream {
@@ -72,18 +72,4 @@ export function createLangGraphSseStream(
       }
     },
   });
-}
-
-/**
- * Creates a static async iterable for use when LLM is not configured.
- */
-export async function* staticContent(
-  sources: string[],
-): AsyncGenerator<{ content: string }> {
-  yield {
-    content: JSON.stringify({
-      message: "Hello from Enki",
-      sources_received: sources,
-    }),
-  };
 }

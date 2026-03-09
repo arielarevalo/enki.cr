@@ -1,14 +1,14 @@
-import { BaseOutlineAgent, type StreamableGraph } from "./base-outline-agent.js";
-import { createOutlineWorkflowGraph } from "../graphs/outline-workflow.js";
-import type { ChatOpenAI } from "@langchain/openai";
-import type { AgentSqlCheckpointSaver } from "../llm/checkpoint-saver.js";
+import { BaseOutlineAgent } from "./base-outline-agent.js";
+import type { LangChainAgent } from "../langchain/lang-chain-agent.js";
+import type { SqlTagFn } from "../langchain/checkpoint-saver.js";
+import { WorkflowLangChainAgent } from "../langchain/outline-workflow.js";
 
 export class OutlineWorkflowAgent extends BaseOutlineAgent {
   getAgentType(): string {
     return "outline-workflow";
   }
 
-  createGraph(llm: ChatOpenAI, checkpointer: AgentSqlCheckpointSaver): StreamableGraph {
-    return createOutlineWorkflowGraph(llm, checkpointer);
+  createLangChainAgent(apiKey: string, sql: SqlTagFn): LangChainAgent {
+    return new WorkflowLangChainAgent(apiKey, sql);
   }
 }

@@ -1,14 +1,14 @@
-import { BaseOutlineAgent, type StreamableGraph } from "./base-outline-agent.js";
-import { createOutlineDeepGraph } from "../graphs/outline-deep.js";
-import type { ChatOpenAI } from "@langchain/openai";
-import type { AgentSqlCheckpointSaver } from "../llm/checkpoint-saver.js";
+import { BaseOutlineAgent } from "./base-outline-agent.js";
+import type { LangChainAgent } from "../langchain/lang-chain-agent.js";
+import type { SqlTagFn } from "../langchain/checkpoint-saver.js";
+import { DeepLangChainAgent } from "../langchain/outline-deep.js";
 
 export class OutlineDeepAgent extends BaseOutlineAgent {
   getAgentType(): string {
     return "outline-deep";
   }
 
-  createGraph(llm: ChatOpenAI, checkpointer: AgentSqlCheckpointSaver): StreamableGraph {
-    return createOutlineDeepGraph(llm, checkpointer);
+  createLangChainAgent(apiKey: string, sql: SqlTagFn): LangChainAgent {
+    return new DeepLangChainAgent(apiKey, sql);
   }
 }

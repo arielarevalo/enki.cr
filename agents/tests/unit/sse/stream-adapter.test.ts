@@ -1,8 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import {
-  createLangGraphSseStream,
-  staticContent,
-} from "../../../src/sse/stream-adapter.js";
+import { createSseStream } from "../../../src/sse/stream-adapter.js";
 import type { Logger } from "../../../src/infrastructure/logger.js";
 
 function createMockLogger(): Logger {
@@ -44,14 +41,14 @@ function parseEvents(raw: string): Array<{ event: string; data: unknown }> {
     });
 }
 
-describe("createLangGraphSseStream", () => {
+describe("createSseStream", () => {
   it("transforms async iterator into SSE events", async () => {
     async function* mockStream() {
       yield { content: "Hello " };
       yield { content: "world" };
     }
 
-    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const stream = createSseStream(mockStream(), createMockLogger());
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 
@@ -74,7 +71,7 @@ describe("createLangGraphSseStream", () => {
       yield [{ content: "world" }, { langgraph_node: "research" }];
     }
 
-    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const stream = createSseStream(mockStream(), createMockLogger());
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 
@@ -92,7 +89,7 @@ describe("createLangGraphSseStream", () => {
       yield [{ content: "text" }, { langgraph_node: "n" }];
     }
 
-    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const stream = createSseStream(mockStream(), createMockLogger());
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 
@@ -108,7 +105,7 @@ describe("createLangGraphSseStream", () => {
       yield { content: "text" };
     }
 
-    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const stream = createSseStream(mockStream(), createMockLogger());
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 
@@ -123,7 +120,7 @@ describe("createLangGraphSseStream", () => {
       yield { content: "part2" };
     }
 
-    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const stream = createSseStream(mockStream(), createMockLogger());
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 
@@ -138,7 +135,7 @@ describe("createLangGraphSseStream", () => {
     }
 
     const logger = createMockLogger();
-    const stream = createLangGraphSseStream(failingStream(), logger);
+    const stream = createSseStream(failingStream(), logger);
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 
@@ -157,7 +154,7 @@ describe("createLangGraphSseStream", () => {
       yield {};
     }
 
-    const stream = createLangGraphSseStream(mockStream(), createMockLogger());
+    const stream = createSseStream(mockStream(), createMockLogger());
     const raw = await readStream(stream);
     const events = parseEvents(raw);
 
@@ -166,37 +163,5 @@ describe("createLangGraphSseStream", () => {
     );
     expect(deltas).toHaveLength(1);
     expect((deltas[0].data as { delta: string }).delta).toBe("text");
-  });
-});
-
-describe("staticContent", () => {
-  it("emits all 8 SSE event types when piped through createLangGraphSseStream", async () => {
-    const stream = createLangGraphSseStream(staticContent(["source1"]), createMockLogger());
-    const raw = await readStream(stream);
-    const events = parseEvents(raw);
-
-    expect(events.map((e) => e.event)).toEqual([
-      "response.created",
-      "response.output_item.added",
-      "response.content_part.added",
-      "response.output_text.delta",
-      "response.output_text.done",
-      "response.content_part.done",
-      "response.output_item.done",
-      "response.completed",
-    ]);
-  });
-
-  it("includes sources in static response text", async () => {
-    const stream = createLangGraphSseStream(staticContent(["src1", "src2"]), createMockLogger());
-    const raw = await readStream(stream);
-    const events = parseEvents(raw);
-
-    const delta = events.find(
-      (e) => e.event === "response.output_text.delta",
-    );
-    const text = (delta?.data as { delta: string }).delta;
-    const parsed = JSON.parse(text);
-    expect(parsed.sources_received).toEqual(["src1", "src2"]);
   });
 });
