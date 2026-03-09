@@ -1,6 +1,6 @@
 # enki-agents
 
-Three Agent classes on the Cloudflare Agents SDK, deployed as a single Worker with Durable Objects.
+Three Agent classes on the Cloudflare Agents SDK with LangGraph AI orchestration, deployed as a single Worker with Durable Objects.
 
 ## Architecture
 
@@ -10,23 +10,26 @@ graph TD
     Route --> Deep["OutlineDeepAgent"]
     Route --> React["OutlineReactAgent"]
     Route --> Workflow["OutlineWorkflowAgent"]
-    Deep --> Handler["handleAgentRequest()"]
-    React --> Handler
-    Workflow --> Handler
-    Handler --> SSE["SSE Response Stream"]
+    Deep --> Base["BaseOutlineAgent"]
+    React --> Base
+    Workflow --> Base
+    Base --> Graph["LangGraph"]
+    Graph --> LLM["OpenRouter LLM"]
+    Graph --> CP["CheckpointSaver → DO SQLite"]
+    Base --> SSE["SSE Response Stream"]
 ```
 
-Each agent class extends `Agent<Env, State>` and is backed by a Durable Object with SQLite storage. Routing is handled by `routeAgentRequest()` for deterministic, session-based dispatch.
+Each agent class extends `BaseOutlineAgent` which handles routing, input validation, logging, and SSE streaming. Graph execution is delegated to LangGraph with checkpoint persistence in DO-backed SQLite.
 
-**Current state**: Agents return mock SSE responses that echo back received sources. LangGraph integration for real AI orchestration is planned (see [ADR-0003](../doc/adr/0003-agents-sdk-for-agents.md)).
+**Fallback**: When `OPENROUTER_API_KEY` is not configured, agents return mock SSE responses.
 
 ## Agent Classes
 
-| Class | Binding | Purpose |
-|-------|---------|---------|
-| `OutlineDeepAgent` | `OUTLINE_DEEP_AGENT` | Deep analysis/generation |
-| `OutlineReactAgent` | `OUTLINE_REACT_AGENT` | ReAct-style reasoning |
-| `OutlineWorkflowAgent` | `OUTLINE_WORKFLOW_AGENT` | Multi-step workflow orchestration |
+| Class | Binding | Graph Topology |
+|-------|---------|----------------|
+| `OutlineDeepAgent` | `OUTLINE_DEEP_AGENT` | Linear: research → analyze → synthesize → format |
+| `OutlineReactAgent` | `OUTLINE_REACT_AGENT` | ReAct loop: reason ↔ (loop or format) |
+| `OutlineWorkflowAgent` | `OUTLINE_WORKFLOW_AGENT` | Multi-step: plan → research → aggregate → critique → revise → format |
 
 ## Prerequisites
 
@@ -47,24 +50,43 @@ npm run dev
 
 Starts a local Wrangler dev server with Durable Object bindings.
 
+## Testing
+
+```bash
+npm run test:unit          # Unit tests
+npm run test:integration   # Integration tests (requires Wrangler)
+npm run test               # All tests
+```
+
 ## Configuration
 
 - `wrangler.jsonc` — Agent bindings, DO migrations, compatibility settings
+- `OPENROUTER_API_KEY` — Secret for OpenRouter LLM access
 
 ## Project Structure
 
 ```
 agents/
   src/
-    index.ts              # Agent classes, request routing, SSE response stream
+    index.ts              # Re-exports + default fetch
+    types.ts              # Shared types
+    agents/               # Agent classes (base + 3 concrete)
+    sse/                  # SSE event builders + stream adapter
+    llm/                  # OpenRouter client + checkpoint saver
+    graphs/               # LangGraph graph definitions
+    infrastructure/       # Logger, request handler, health
+  tests/
+    unit/                 # Unit tests (vitest)
+    integration/          # Integration tests (workers pool)
   wrangler.jsonc          # Worker + Durable Object configuration
 ```
 
 ## Adding a New Agent
 
-1. Create a new class extending `Agent<Env, State>` in `src/index.ts`
-2. Add a DO binding in `wrangler.jsonc` under `durable_objects.bindings`
-3. Add the class name to the next migration tag in `wrangler.jsonc` under `migrations`
+1. Define the graph in `src/graphs/outline-{name}.ts`
+2. Create agent class in `src/agents/outline-{name}-agent.ts` extending `BaseOutlineAgent`
+3. Export from `src/index.ts`
+4. Add DO binding and migration entry in `wrangler.jsonc`
 
 ## SSE Event Protocol
 
@@ -80,3 +102,4 @@ Agents emit SSE events following the OpenAI Responses API format:
 | `response.content_part.done` | Content part complete |
 | `response.output_item.done` | Message item complete |
 | `response.completed` | Stream finished |
+| `error` | Error during processing |

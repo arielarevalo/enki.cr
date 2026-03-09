@@ -25,6 +25,7 @@ jobs:
 
       - run: cd agents && npm ci
       - run: cd agents && npm run type-check
+      - run: cd agents && npm run test:unit
 
   deploy:
     needs: check

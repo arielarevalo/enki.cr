@@ -19,3 +19,9 @@ agents/.wrangler/
 # Backend
 backend/node_modules/
 backend/.wrangler/
+
+# Evals
+evals/.venv/
+evals/.pytest_cache/
+evals/__pycache__/
+evals/**/__pycache__/

@@ -6,13 +6,21 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "types": "wrangler types",
-    "type-check": "npm run types && tsc"
+    "type-check": "npm run types && tsc",
+    "test": "vitest run",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.workers.config.ts"
   },
   "dependencies": {
+    "@langchain/langgraph": "^1.2.1",
+    "@langchain/langgraph-checkpoint": "^1.0.0",
+    "@langchain/openai": "^1.2.12",
     "agents": "^0.7"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.12.20",
     "typescript": "^5.8",
+    "vitest": "^4.0.18",
     "wrangler": "^4"
   }
 }
