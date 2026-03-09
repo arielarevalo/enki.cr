@@ -3,13 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --port 8788",
     "deploy": "wrangler deploy",
     "types": "wrangler types",
     "type-check": "npm run types && tsc",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.config.ts",
-    "test:integration": "vitest run --config vitest.workers.config.ts"
+    "test:integration": "vitest run --config vitest.workers.config.ts",
+    "test:e2e": "bash tests/e2e/run-e2e.sh",
+    "test:e2e:prod": "bash tests/e2e/run-e2e.sh https://agents.enki.cr"
   },
   "dependencies": {
     "@langchain/langgraph": "^1.2.1",

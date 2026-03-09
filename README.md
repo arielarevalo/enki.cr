@@ -53,15 +53,45 @@ Add a `.tf` file (or edit an existing one) in `infra/`, then follow the change f
 
 ### Local Development
 
-```bash
-# Frontend (Vite dev server with API proxy)
-cd frontend && npm run dev
+#### Setup
 
-# Backend
+```bash
+# 1. Copy environment templates
+cp agents/.dev.vars.example agents/.dev.vars   # add your OPENROUTER_API_KEY
+cp backend/.dev.vars.example backend/.dev.vars  # points to local agents
+
+# 2. Migrate and seed the local database
+cd backend && npm run db:migrate:local && bash scripts/seed-local.sh
+```
+
+#### Running Services
+
+Start each in a separate terminal (order matters — agents first, then backend, then frontend):
+
+```bash
+# Terminal 1: Agents (port 8788)
+cd agents && npm run dev
+
+# Terminal 2: Backend (port 8787)
 cd backend && npm run dev
 
-# Agents
-cd agents && npm run dev
+# Terminal 3: Frontend (port 5173, proxies /api to backend)
+cd frontend && npm run dev
+```
+
+#### E2E Tests
+
+Each component has its own E2E tests. The dependency chain is: agents → backend → frontend.
+
+```bash
+# 1. Agents (standalone — no upstream dependencies)
+cd agents && npm run test:e2e
+
+# 2. Backend (pre-flight checks agents are reachable)
+cd backend && npm run test:e2e:local
+
+# 3. Frontend (pre-flight checks backend is reachable)
+cd frontend && npm run test:e2e:local
 ```
 
 ## CI/CD

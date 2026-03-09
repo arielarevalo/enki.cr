@@ -10,6 +10,7 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "bash tests/e2e/run-e2e.sh",
+    "test:e2e:local": "bash tests/e2e/run-e2e.sh local",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply enki-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply enki-db --remote"

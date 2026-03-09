@@ -1,5 +1,6 @@
 .env
 .DS_Store
+**/.dev.vars
 
 # Terraform
 infra/.terraform/
@@ -25,3 +26,6 @@ evals/.venv/
 evals/.pytest_cache/
 evals/__pycache__/
 evals/**/__pycache__/
+
+# Test results
+**/results.xml

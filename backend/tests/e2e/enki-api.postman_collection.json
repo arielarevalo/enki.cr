@@ -382,7 +382,7 @@
                   "",
                   "pm.test('Error code is unauthorized', function () {",
                   "  var json = pm.response.json();",
-                  "  pm.expect(json.error).to.eql('unauthorized');",
+                  "  pm.expect(json.error.type).to.eql('unauthorized');",
                   "});"
                 ]
               }
@@ -449,7 +449,7 @@
                   "",
                   "pm.test('Error code is forbidden', function () {",
                   "  var json = pm.response.json();",
-                  "  pm.expect(json.error).to.eql('forbidden');",
+                  "  pm.expect(json.error.type).to.eql('forbidden');",
                   "});",
                   "",
                   "// Cleanup: revoke the test key",

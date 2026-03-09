@@ -8,10 +8,9 @@
     {
       "binding": "DB",
       "database_name": "enki-db",
-      "database_id": "" // Set after Terraform creates the D1 database
+      "database_id": "69d7ed7d-0f96-4abc-bb3a-b7adeb49ad3c",
+      "migrations_dir": "drizzle"
     }
   ],
-  "vars": {
-    "AGENTS_BASE_URL": "https://agents.enki.cr"
-  }
+  "vars": {}
 }

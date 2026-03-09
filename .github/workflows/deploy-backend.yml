@@ -61,6 +61,6 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - run: cd backend && npm ci
-      - run: cd backend && npm run test:e2e
+      - run: cd backend && bash tests/e2e/run-e2e.sh prod
         env:
           ADMIN_KEY: ${{ secrets.ENKI_ADMIN_KEY }}

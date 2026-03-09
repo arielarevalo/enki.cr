@@ -1,0 +1,8 @@
+{
+  "name": "enki",
+  "private": true,
+  "scripts": {
+    "test:e2e:backend": "cd agents && npm run test:e2e && cd ../backend && npm run test:e2e:local",
+    "test:e2e": "npm run test:e2e:backend && cd frontend && npm run test:e2e:local"
+  }
+}
