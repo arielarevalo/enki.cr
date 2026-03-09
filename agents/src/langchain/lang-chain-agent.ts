@@ -18,13 +18,18 @@ export abstract class LangChainAgent {
     this.checkpointer = new AgentSqlCheckpointSaver(sql);
   }
 
+  private setupDone = false;
+
   async setup(): Promise<void> {
+    if (this.setupDone) return;
     await this.checkpointer.setup();
+    this.setupDone = true;
   }
 
   protected abstract compile(): StreamableGraph;
 
   async process(sources: string[]): Promise<AsyncIterable<unknown>> {
+    await this.setup();
     const graph = this.compile();
     return graph.stream(
       { sources, messages: [] },

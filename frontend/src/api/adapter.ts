@@ -31,7 +31,7 @@ export function getSelectedDemo(): Demo | null {
 
 export async function fetchDemos(): Promise<{ demos: Demo[]; error?: string }> {
   try {
-    const res = await fetch(`${API_BASE}/api/demos/`, {
+    const res = await fetch(`${API_BASE}/api/demos`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) {
